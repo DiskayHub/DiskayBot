@@ -11,7 +11,6 @@ namespace DiskayBot.Bot.Bot;
 public class TelegramBot {
     private TelegramBotClient bot;
     private CancellationTokenSource cts_token = new();
-    private UserController _controller = new();
 
     public TelegramBot(string bot_token) {
         bot = new TelegramBotClient(bot_token);
@@ -25,23 +24,16 @@ public class TelegramBot {
         var authorization_request = await BotService.authorization(msg.From.Id);
 
         if (authorization_request == HttpStatusCode.OK) {
-            switch(msg.Text) {
-                case "/start":
-                    await bot.SendMessage(msg.Chat, BotMessages.StartMessage(), ParseMode.Markdown);
-                    break;
-                case "/create_account":
-                    await bot.SendMessage(msg.Chat, BotMessages.CreateAccountMessage(), ParseMode.Markdown);
-                    break;
-                default:
-                    break;
-            }    
+            UserController controller = new(bot, msg.From.Id);
+            await controller.ProcessMessage(msg);
         }
         else if (authorization_request == HttpStatusCode.NotFound) {
-            await bot.SendMessage(msg.Chat, "Ты ещё не авторизован? Сделай это сейчас", ParseMode.Markdown);
+            BasicController controller = new(bot, msg.From.Id);
+            await controller.ProcessMessage(msg);
         }
-
+        
         else {
-            await bot.SendMessage(msg.Chat, authorization_request.ToString(), ParseMode.Markdown);
+            await bot.SendMessage(msg.Chat, "Страшная ошибка, попробуйте ещё раз.", ParseMode.Markdown);
         }
 
         Console.WriteLine("Сообщение обработано");
