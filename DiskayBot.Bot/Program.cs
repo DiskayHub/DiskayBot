@@ -10,3 +10,6 @@ if (bot_token != null) {
     var bot = new TelegramBot(bot_token);
     await bot.Start();
 }
+else {
+    Console.WriteLine("Токен отсутствует");
+}

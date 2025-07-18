@@ -16,4 +16,8 @@
     <ProjectReference Include="..\DiskayBot.API\DiskayBot.API.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Messages/" />
+  </ItemGroup>
+
 </Project>

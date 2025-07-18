@@ -1,7 +1,5 @@
 using System.Net;
-using DiskayBot.API.Services;
-using DiskayBot.Bot.Controllers;
-using DiskayBot.Bot.Messages;
+using DiskayBot.Bot.Bot.Controllers;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -10,33 +8,74 @@ namespace DiskayBot.Bot.Bot;
 
 public class TelegramBot {
     private TelegramBotClient bot;
+    private CommandsController _commands = new();
+    private CallBackController _callbacks = new();
     private CancellationTokenSource cts_token = new();
+    
+    Chat? extract_Chat(Update update) {
+        switch (update.Type) {
+            case UpdateType.Message:
+                return update.Message?.Chat;
+            case UpdateType.CallbackQuery:
+                return update.CallbackQuery.Message?.Chat;
+        }
+        return null;
+    }
 
     public TelegramBot(string bot_token) {
         bot = new TelegramBotClient(bot_token);
-        bot.OnMessage += OnMessage;
+        bot.OnUpdate += OnUpdate;
     }
 
-    protected async Task OnMessage(Message msg, UpdateType update) {
-        Console.WriteLine("Diskay принял сообщение");
-        Console.WriteLine($"Хм, интересно, что-же он хотел этим сказать: {msg.Text}");
+    protected async Task OnUpdate(Update update) {
+        Chat? chat = extract_Chat(update);
+        cts_token.CancelAfter(2000);
 
-        var authorization_request = await BotService.authorization(msg.From.Id);
-
-        if (authorization_request == HttpStatusCode.OK) {
-            UserController controller = new(bot, msg.From.Id);
-            await controller.ProcessMessage(msg);
-        }
-        else if (authorization_request == HttpStatusCode.NotFound) {
-            BasicController controller = new(bot, msg.From.Id);
-            await controller.ProcessMessage(msg);
-        }
         
-        else {
-            await bot.SendMessage(msg.Chat, "Страшная ошибка, попробуйте ещё раз.", ParseMode.Markdown);
+        try {
+            Console.Write("\n- - - ОБРАБОТКА ЗАПРОСА - - -\n");
+            Console.WriteLine("Diskay принял сообщение");
+
+            if (update.Type == UpdateType.Message && update.Message != null && update.Message.Text != null)
+            {
+                string text = update.Message.Text;
+                Console.WriteLine($"Хм, интересно, что-же он хотел этим сказать: {text}");
+                var command = _commands.GetCommand(text);
+                if (command != null) {
+                    Console.WriteLine("О, я знаю эту команду!");
+                    await command.ExecuteAsync(bot, update, cts_token.Token);
+                }
+                else {
+                    Console.WriteLine("Ничё не понял но интересно");
+                }
+            }
+
+            else if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery?.Data != null) {
+                string callbackQuery = update.CallbackQuery.Data;
+
+                var parts = callbackQuery.Split("_", 2);
+
+                string callback_name = parts[0];
+                string? query = parts[1];
+
+                var callback = _callbacks.GetCallBack(callback_name);
+                if (callback != null) {
+                    await callback.ExecuteAsync(bot, update, cts_token.Token, query);
+                }
+
+                Console.WriteLine(callbackQuery);
+            }
+
+            Console.WriteLine("- - - ЗАПРОС ОБРАБОТАН - - -");
         }
 
-        Console.WriteLine("Сообщение обработано");
+        catch (OperationCanceledException){
+            await bot.SendMessage(chat, "Превышение времени запроса", ParseMode.Markdown);
+        }
+
+        catch (Exception ex){
+            await bot.SendMessage(chat, "Ошибка при запросе", ParseMode.Markdown);
+        }
     }
 
     public async Task Start() {
