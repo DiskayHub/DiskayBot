@@ -2,6 +2,8 @@ using System;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using DiskayBot.API.Contracts.Groups;
 
 namespace DiskayBot.API.Services;
 
@@ -40,6 +42,27 @@ public class BotService{
         catch (HttpRequestException ex) {
             Console.WriteLine("Ошибка дурацкая: " + ex.Message);
             return HttpStatusCode.BadRequest;
+        }
+    }
+
+    public static async Task<List<GroupResponse>?> GetAllGroups() {
+        try {
+            HttpResponseMessage response = await _client.GetAsync("http://localhost:5014/api/Groups/GetAll");
+            if (response.IsSuccessStatusCode) {
+                string ResponseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(ResponseBody);
+                var groups = JsonSerializer.Deserialize<List<GroupResponse>>(ResponseBody);
+                return groups;
+            }
+            throw new HttpRequestException();
+        }
+        catch (HttpRequestException ex) {
+            throw new HttpRequestException(ex.Message);
+        }
+        catch (Exception ex) {
+            Console.WriteLine(ex.GetType());
+            Console.WriteLine(ex.Message);
+            return null;
         }
     }
 }

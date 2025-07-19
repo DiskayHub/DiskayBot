@@ -11,6 +11,6 @@ public class StartCommand : AbstractBotCommand {
 
     public override async Task ExecuteAsync(TelegramBotClient botClient, Update update, CancellationToken cts_token) {
         var chat_id = update.Message!.Chat;
-        await botClient.SendMessage(chat_id, "Привет, я Diskay", ParseMode.Markdown);
+        await botClient.SendMessage(chat_id, "Привет, я ✨✨ 𝔻𝕚𝕤𝕜𝕒𝕪 ✨✨", ParseMode.Markdown);
     }
 }

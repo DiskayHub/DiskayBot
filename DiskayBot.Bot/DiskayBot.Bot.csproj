@@ -9,11 +9,13 @@
 
   <ItemGroup>
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.47" />
     <PackageReference Include="Telegram.Bot" Version="22.5.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DiskayBot.API\DiskayBot.API.csproj" />
+    <ProjectReference Include="..\DiskayBot.Redis\DiskayBot.Redis.csproj" />
   </ItemGroup>
 
   <ItemGroup>
