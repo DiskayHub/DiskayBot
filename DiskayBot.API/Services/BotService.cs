@@ -3,14 +3,19 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Groups;
 
 namespace DiskayBot.API.Services;
 
 public class BotService{
-    private static readonly HttpClient _client = new();
+    private readonly HttpClient _client;
 
-    public static async Task<HttpStatusCode> registration(long userId, string userName, string groupId) {
+    public BotService(HttpClient client) {
+        _client = client;
+    }
+
+    public async Task<HttpStatusCode> Registration(long userId, string userName, string groupId) {
         try {
             string json_content = JsonSerializer.Serialize(new {
                 user_id = userId,
@@ -18,10 +23,15 @@ public class BotService{
                 group_id = groupId
             });
             var content = new StringContent(json_content, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _client.PostAsync("http://localhost:5014/api/TelegramUser/AddUser", content);
-            string ResponseBody = await response.Content.ReadAsStringAsync();
-
-            return HttpStatusCode.OK;
+            HttpResponseMessage response = await _client.PostAsync("http://localhost:5014/api/TelegramUsers/AddUser", content);
+            
+            Console.WriteLine(response.RequestMessage);
+            if (response.IsSuccessStatusCode) {
+                return HttpStatusCode.OK;   
+            }
+            else {
+                return HttpStatusCode.InternalServerError;
+            }
         }
 
         catch (HttpRequestException ex) {
@@ -30,22 +40,37 @@ public class BotService{
         }
     }
 
-    public static async Task<HttpStatusCode> authorization(long userId) {
-        try {
+    public async Task<UserData?> Authorization(long userId) {
+        try{
             string json_content = JsonSerializer.Serialize(new {
                 user_id = userId
             });
             var content = new StringContent(json_content, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _client.PostAsync("http://localhost:5014/api/TelegramUser/GetById", content);
-            return response.StatusCode;
+            HttpResponseMessage response =
+                await _client.GetAsync($"http://localhost:5014/api/TelegramUsers/GetById?user_id={userId}");
+
+            if (response.IsSuccessStatusCode){
+                var responseBody = await response.Content.ReadAsStringAsync();
+                var userData = JsonSerializer.Deserialize<UserData>(responseBody);
+                return userData;
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound){
+                return null;
+            }
+
+            throw new HttpRequestException();
         }
-        catch (HttpRequestException ex) {
+        catch (HttpRequestException ex){
             Console.WriteLine("Ошибка дурацкая: " + ex.Message);
-            return HttpStatusCode.BadRequest;
+            throw new HttpRequestException(ex.Message);
+        }
+        catch (Exception ex){
+            throw new Exception(ex.Message);
         }
     }
 
-    public static async Task<List<GroupResponse>?> GetAllGroups() {
+    public async Task<List<GroupResponse>?> GetAllGroups() {
         try {
             HttpResponseMessage response = await _client.GetAsync("http://localhost:5014/api/Groups/GetAll");
             if (response.IsSuccessStatusCode) {

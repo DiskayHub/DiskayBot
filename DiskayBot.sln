@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot.API", "DiskayBot.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot.Redis", "DiskayBot.Redis\DiskayBot.Redis.csproj", "{C92DCA25-4329-43C7-A989-CEA678282D7A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot.Tests", "DiskayBot.Tests\DiskayBot.Tests.csproj", "{91424465-04DF-49B8-94FB-AED0288C9E2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{C92DCA25-4329-43C7-A989-CEA678282D7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C92DCA25-4329-43C7-A989-CEA678282D7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C92DCA25-4329-43C7-A989-CEA678282D7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91424465-04DF-49B8-94FB-AED0288C9E2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91424465-04DF-49B8-94FB-AED0288C9E2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91424465-04DF-49B8-94FB-AED0288C9E2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91424465-04DF-49B8-94FB-AED0288C9E2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,5 @@
 using System.Net;
+using DiskayBot.API.Services;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Redis;
 using StackExchange.Redis;
@@ -11,6 +12,7 @@ namespace DiskayBot.Bot.Bot;
 public class TelegramBot {
     private TelegramBotClient bot;
     private CancellationTokenSource cts_token = new();
+    private BotService _service;
     private RedisController _redis;
     private CommandsController _commands;
     private CallBackController _callbacks;
@@ -94,8 +96,9 @@ public class TelegramBot {
         try{
             var redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
             _redis = new RedisController(redis.GetDatabase());
-            _commands = new CommandsController(_redis);
-            _callbacks = new CallBackController(_redis);
+            _service = new BotService(new HttpClient());
+            _commands = new CommandsController(_redis, _service);
+            _callbacks = new CallBackController(_redis,  _service);
             
             Console.WriteLine("- - REDIS START WORKING - -");
             

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DiskayBot.API.Contracts;
 using DiskayBot.Redis.Abstractions;
 using StackExchange.Redis;
 
@@ -24,8 +25,13 @@ public class RedisController : IRedisController {
     public async Task<UserData?> GetUser(string id) {
         try {
             var data = await _redis.StringGetAsync(id);
-            var userData = JsonSerializer.Deserialize<UserData>(data);
-            return userData;
+            
+            if (!data.IsNullOrEmpty){
+                var userData = JsonSerializer.Deserialize<UserData>(data);
+                return userData;
+            }
+            
+            return null;
         }
         catch (Exception e){
             throw new Exception(e.Message);
@@ -59,6 +65,16 @@ public class RedisController : IRedisController {
             Console.WriteLine($"TTL: {ttl?.TotalSeconds}");
             
             return data;
+        }
+        catch (Exception e){
+            Console.WriteLine(e.GetType());
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task DeleteData(string key) {
+        try {
+            await _redis.KeyDeleteAsync(key);
         }
         catch (Exception e){
             Console.WriteLine(e.GetType());

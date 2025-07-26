@@ -1,4 +1,5 @@
 using System;
+using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Commands;
 using DiskayBot.Redis;
@@ -9,10 +10,11 @@ namespace DiskayBot.Bot.Bot.Controllers;
 public class CommandsController {
     private readonly Dictionary<string, AbstractBotCommand> _commands;
 
-    public CommandsController(RedisController redis) {
+    public CommandsController(RedisController redis, BotService service) {
         _commands = new Dictionary<string, AbstractBotCommand> {
             { "/start", new StartCommand() },
-            { "/create_account", new RegisterCommand() }
+            { "/create_account", new RegisterCommand(redis, service) },
+            { "/show_profile", new ShowProfileCommand(redis, service) }
         };
     }
 

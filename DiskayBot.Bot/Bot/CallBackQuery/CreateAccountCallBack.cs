@@ -1,3 +1,5 @@
+using System.Net;
+using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Redis;
 using Telegram.Bot;
@@ -8,32 +10,52 @@ namespace DiskayBot.Bot.Bot.Controllers;
 
 public class CreateAccountCallBack : AbstractBotCallBack {
     private readonly RedisController _redis;
+    private readonly BotService _service;
 
-    public CreateAccountCallBack(RedisController redis) : base("createAccount") {
+    public CreateAccountCallBack(RedisController redis, BotService service) : base("createAccount") {
         _redis = redis;
+        _service = service;
     }
     
     public override async Task ExecuteAsync(TelegramBotClient botClient, Update update, 
         CancellationToken cancellationToken, string? query) {
 
         var chat = update.CallbackQuery.Message.Chat;
-        var chat_id = chat.Id.ToString();
+        var messageId = update.CallbackQuery.Message.MessageId;
         
-        try {
-            var cash = await _redis.GetDataHash(chat_id);
-            var group_id = cash.FirstOrDefault(x => x.Name.ToString() == "group_id").Value;
+        var ChatId = chat.Id.ToString();
+        
+        await botClient.DeleteMessage(chat, messageId);
 
-            if (group_id.HasValue){
-                await botClient.SendMessage(chat, group_id.ToString(), ParseMode.Markdown);   
+        if (query == "yes"){
+            try {
+                var cash = await _redis.GetDataHash(ChatId);
+                var GroupId = cash.FirstOrDefault(x => x.Name.ToString() == "group_id").Value;
+                
+                var UserId = update.CallbackQuery.From.Id;
+                var Username =  update.CallbackQuery.From.Username;
+                
+                if (GroupId.HasValue){
+                    var request = await _service.Registration(UserId, Username, GroupId.ToString());
+                    if (request == HttpStatusCode.OK){
+                        botClient.SendMessage(ChatId, $"Добро пожаловать, {Username}!", ParseMode.Markdown);
+                    }
+                    else {
+                        botClient.SendMessage(ChatId, $"Ошибка при отправке данных", ParseMode.Markdown);
+                    }
+                }
+                else {
+                    await botClient.SendMessage(chat, "Таймаут. Попробуйте ещё раз.", ParseMode.Markdown);   
+                }
             }
-            else {
-                await botClient.SendMessage(chat, "Таймаут. Попробуйте ещё раз.", ParseMode.Markdown);   
+            catch (Exception e){
+                Console.WriteLine(e.GetType());
+                throw new Exception(e.Message);
             }
         }
-        catch (Exception e){
-            Console.WriteLine(e.GetType());
-            Console.WriteLine(e.Message);
-            throw;
+        else {
+            await botClient.SendMessage(chat, "Операция была отклонена. ", ParseMode.Markdown);
+            _redis.DeleteData(ChatId);
         }
     }
 }

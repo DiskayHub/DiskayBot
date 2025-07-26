@@ -18,8 +18,4 @@
     <ProjectReference Include="..\DiskayBot.Redis\DiskayBot.Redis.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Messages/" />
-  </ItemGroup>
-
 </Project>
