@@ -6,13 +6,13 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace DiskayBot.Bot.Bot.Controllers;
+namespace DiskayBot.Bot.Bot.CallBackQuery;
 
 public class CreateAccountCallBack : AbstractBotCallBack {
     private readonly RedisController _redis;
-    private readonly BotService _service;
+    private readonly MemoryService _service;
 
-    public CreateAccountCallBack(RedisController redis, BotService service) : base("createAccount") {
+    public CreateAccountCallBack(RedisController redis, MemoryService service) : base("createAccount") {
         _redis = redis;
         _service = service;
     }

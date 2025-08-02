@@ -4,5 +4,6 @@ namespace DiskayBot.API.Contracts.Groups;
 
 public record GroupResponse(
     Guid id,
-    string name
+    string name,
+    int course
 );

@@ -6,8 +6,16 @@ namespace DiskayBot.Bot.Abstractions;
 public class MessageBuilder {
     public static string StartMessage() {
         string result = string.Empty;
-        
-        
+
+        result += "Привет, я Diskay 💫\n";
+        result += "\n";
+        result += "Персональный бот-помощник *Колледжа Цифровых Технологий*.\n";
+        result += "\n";
+        result += "Я разрабатываюсь для того, чтобы упростить получение, взаимодействие с данными колледжа.\n";
+        result += "Функционал, который тебе доступен:\n";
+        result += "\n";
+        result += "📆\nПолучение актуального расписания на неделю или на день.\n";
+        result += "⚡️\nПоиск свободных кабинетов.";
         
         return result;
     }
@@ -28,8 +36,7 @@ public class MessageBuilder {
     public static string ShowProfile(UserData data) {
         string result = string.Empty;
 
-        result += "✨✨ 𝔻𝕚𝕤𝕜𝕒𝕪 ✨✨\n";
-        result += $"*Профиль 🪐*\n";
+        result += "𝔻𝕚𝕤𝕜𝕒𝕪 ℙ𝕣𝕠𝕗𝕚𝕝𝕖\n";
         result += '\n';
         result += $"--> `{data.username}`\n";
         result += $"Группа: *{data.group_name}* 🎓\n";

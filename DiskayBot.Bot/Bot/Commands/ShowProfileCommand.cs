@@ -10,9 +10,9 @@ namespace DiskayBot.Bot.Bot.Commands;
 
 public class ShowProfileCommand : AbstractBotCommand {
     private readonly RedisController _redis;
-    private readonly BotService _service;
+    private readonly MemoryService _service;
 
-    public ShowProfileCommand(RedisController redis, BotService service) : base("/show_profile")  {
+    public ShowProfileCommand(RedisController redis, MemoryService service) : base("/show_profile")  {
         _redis = redis;
         _service = service;
     }

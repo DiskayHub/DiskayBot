@@ -8,11 +8,13 @@ using DiskayBot.API.Contracts.Groups;
 
 namespace DiskayBot.API.Services;
 
-public class BotService{
+public class MemoryService{
     private readonly HttpClient _client;
+    public string Name { get; }
 
-    public BotService(HttpClient client) {
+    public MemoryService(HttpClient client) {
         _client = client;
+        Name = "DiskayMemory";
     }
 
     public async Task<HttpStatusCode> Registration(long userId, string userName, string groupId) {
@@ -29,9 +31,7 @@ public class BotService{
             if (response.IsSuccessStatusCode) {
                 return HttpStatusCode.OK;   
             }
-            else {
-                return HttpStatusCode.InternalServerError;
-            }
+            return HttpStatusCode.InternalServerError;
         }
 
         catch (HttpRequestException ex) {
@@ -75,7 +75,6 @@ public class BotService{
             HttpResponseMessage response = await _client.GetAsync("http://localhost:5014/api/Groups/GetAll");
             if (response.IsSuccessStatusCode) {
                 string ResponseBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(ResponseBody);
                 var groups = JsonSerializer.Deserialize<List<GroupResponse>>(ResponseBody);
                 return groups;
             }
@@ -88,6 +87,26 @@ public class BotService{
             Console.WriteLine(ex.GetType());
             Console.WriteLine(ex.Message);
             return null;
+        }
+    }
+
+    public async Task<List<GroupResponse>?> GetCourseGroups(int course) {
+        try{
+            HttpResponseMessage response =
+                await _client.GetAsync($"http://localhost:5014/api/Groups/GetByCourse?course={course}");
+            if (response.IsSuccessStatusCode){
+                string ResponseBody = await response.Content.ReadAsStringAsync();
+                var groups = JsonSerializer.Deserialize<List<GroupResponse>>(ResponseBody);
+                return groups;
+            }
+
+            throw new HttpRequestException();
+        }
+        catch (HttpRequestException ex){
+            throw new HttpRequestException(ex.Message);
+        }
+        catch (Exception ex){
+            throw new Exception(ex.Message);
         }
     }
 }

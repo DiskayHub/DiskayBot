@@ -1,6 +1,7 @@
 using System.Net;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Bot.Controllers;
+using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Redis;
 using StackExchange.Redis;
 using Telegram.Bot;
@@ -12,7 +13,7 @@ namespace DiskayBot.Bot.Bot;
 public class TelegramBot {
     private TelegramBotClient bot;
     private CancellationTokenSource cts_token = new();
-    private BotService _service;
+    private MemoryService _service;
     private RedisController _redis;
     private CommandsController _commands;
     private CallBackController _callbacks;
@@ -27,6 +28,16 @@ public class TelegramBot {
         return null;
     }
 
+    long? extract_UserId(Update update) {
+        switch (update.Type){
+            case UpdateType.Message:
+                return update.Message?.From.Id;
+            case UpdateType.CallbackQuery:
+                return update.CallbackQuery?.From.Id;
+        }
+        return null;
+    }
+
     public TelegramBot(string bot_token) {
         bot = new TelegramBotClient(bot_token);
         bot.OnUpdate += OnUpdate;
@@ -34,6 +45,10 @@ public class TelegramBot {
 
     protected async Task OnUpdate(Update update) {
         Chat? chat = extract_Chat(update);
+        long? user_id = extract_UserId(update);
+        
+        
+        
         cts_token.CancelAfter(2000);
 
         try{
@@ -78,6 +93,10 @@ public class TelegramBot {
             await bot.SendMessage(chat, "Превышение времени запроса ⌛", ParseMode.Markdown);
         }
 
+        catch (ConnectionRefuseExeption e){
+            await bot.SendMessage(chat, "Diskay не получил ответа на запрос", ParseMode.Markdown);
+        }
+
         catch (HttpRequestException ex){
             await bot.SendMessage(chat, "Diskay не смог обработать запрос", ParseMode.Markdown);
         }
@@ -88,6 +107,7 @@ public class TelegramBot {
 
         catch (Exception ex) {
             Console.WriteLine(ex.GetType());
+            Console.WriteLine(ex.Message);
             await bot.SendMessage(chat, "Неизвестная ошибка ☠", ParseMode.Markdown);
         }
     }
@@ -96,7 +116,7 @@ public class TelegramBot {
         try{
             var redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
             _redis = new RedisController(redis.GetDatabase());
-            _service = new BotService(new HttpClient());
+            _service = new MemoryService(new HttpClient());
             _commands = new CommandsController(_redis, _service);
             _callbacks = new CallBackController(_redis,  _service);
             
