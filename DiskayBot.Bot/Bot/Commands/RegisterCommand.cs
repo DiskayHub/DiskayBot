@@ -24,26 +24,34 @@ public class RegisterCommand : AbstractBotCommand {
     public override async Task ExecuteAsync(TelegramBotClient botClient, Update update, CancellationToken cancellationToken) {
         var chat = update.Message.Chat;
         var userId = update.Message.From.Id;
+        var username = update.Message.From.Username;
 
         try{
-            var request_redis = await _redis.GetUser(userId.ToString());
+            var requestRedisUser = await _redis.GetUser(username);
 
-            if (request_redis == null){
-                var userData_request = await _service.Authorization(userId);
+            if (requestRedisUser == null){
+                var requestRedisSession = await _redis.GetDataHash(userId.ToString());
+                if (requestRedisSession == null){
+                    var userDataRequest = await _service.Authorization(userId);
 
-                if (userData_request == null){
-                    var keyboard = await GetReplyMarkup();
-                    await botClient.SendMessage(chat, MessageBuilder.CreateAccount(), ParseMode.Markdown);
-                    await botClient.SendMessage(
-                        chat,
-                        "Выберите курс",
-                        ParseMode.Markdown,
-                        replyMarkup: keyboard
-                    );
+                    if (userDataRequest == null){
+                        var keyboard = await GetReplyMarkup();
+                        await botClient.SendMessage(chat, MessageBuilder.CreateAccount(), ParseMode.Markdown);
+                        await botClient.SendMessage(
+                            chat,
+                            "Выберите курс",
+                            ParseMode.Markdown,
+                            replyMarkup: keyboard
+                        );
+                    }
+                    else{
+                        await botClient.SendMessage(chat, "Кажется вы уже авторизованы", ParseMode.Markdown);
+                        await _redis.SaveUser(username, userDataRequest);
+                    }
                 }
-                else{
-                    _redis.SaveUser(userId.ToString(), userData_request);
-                    await botClient.SendMessage(chat, "Кажется вы уже авторизованы", ParseMode.Markdown);
+                else {
+                    await botClient.SendMessage(chat, "Вы не завершили сессию. \nЗакончитете её, либо дождитесь таймаута.", 
+                        ParseMode.Markdown);
                 }
             }
             else{

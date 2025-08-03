@@ -36,6 +36,12 @@ public class ChouseCourseCallBack : AbstractBotCallBack {
 
     public async Task<ReplyMarkup?> GetReplyMarkup(int course) {
         var courseGroups = await _service.GetCourseGroups(course);
+        
+        courseGroups = courseGroups.OrderBy(c => {
+            var parts = c.name.Split('-');
+            return int.Parse(parts[1]);
+        }).ToList();
+        
         var keyboardRows = courseGroups.Select(group =>
             new[] { InlineKeyboardButton.WithCallbackData(group.name, $"group_{group.id}") }
         ).ToList();

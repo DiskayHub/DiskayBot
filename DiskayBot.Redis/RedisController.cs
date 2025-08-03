@@ -12,10 +12,10 @@ public class RedisController : IRedisController {
         _redis = redis;
     }
 
-    public async Task SaveUser(string id, UserData data) {
+    public async Task SaveUser(string username, UserData data) {
         try{
             var jsonString = JsonSerializer.Serialize(data);
-            await _redis.StringSetAsync(id, jsonString);
+            await _redis.StringSetAsync(username, jsonString);
         }
         catch (Exception e){
             Console.WriteLine(e.Message);
@@ -24,6 +24,8 @@ public class RedisController : IRedisController {
 
     public async Task<UserData?> GetUser(string id) {
         try {
+            Console.WriteLine("[REDIS]: ПЫТАЮСЬ ПОЛУЧИТЬ ПОЛЬЗОВАТЕЛЯ - " + id);
+            
             var data = await _redis.StringGetAsync(id);
             
             if (!data.IsNullOrEmpty){
@@ -51,6 +53,7 @@ public class RedisController : IRedisController {
         try{
             await _redis.HashSetAsync(key, hash);
             await _redis.KeyExpireAsync(key, timeout);
+            Console.WriteLine("[REDIS]: СОХРАНИЛ ИНФОРМАЦИЮ - " + key);
         }
         catch (Exception e){
             throw new Exception(e.Message);
@@ -60,11 +63,14 @@ public class RedisController : IRedisController {
     public async Task<HashEntry[]?> GetDataHash(string key) {
         try {
             var data = await _redis.HashGetAllAsync(key);
+
+            if (data.Length != 0){
+                var ttl = await _redis.KeyTimeToLiveAsync(key);
+                Console.WriteLine($"TTL: {ttl?.TotalSeconds}");
+                return data;
+            }
             
-            var ttl = await _redis.KeyTimeToLiveAsync(key);
-            Console.WriteLine($"TTL: {ttl?.TotalSeconds}");
-            
-            return data;
+            return null;
         }
         catch (Exception e){
             Console.WriteLine(e.GetType());

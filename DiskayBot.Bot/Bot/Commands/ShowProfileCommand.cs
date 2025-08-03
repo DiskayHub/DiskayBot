@@ -1,5 +1,6 @@
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Redis;
 using StackExchange.Redis;
 using Telegram.Bot;
@@ -27,7 +28,7 @@ public class ShowProfileCommand : AbstractBotCommand {
                 string result = MessageBuilder.ShowProfile(redis_request);
                 await botClient.SendMessage(chat, result, ParseMode.Markdown);
             }
-            else {
+            else{
                 var database_request = await _service.Authorization(userId);
 
                 if (database_request != null){
@@ -38,6 +39,9 @@ public class ShowProfileCommand : AbstractBotCommand {
                 else
                     await botClient.SendMessage(chat, MessageBuilder.NotRegistered(), ParseMode.Markdown);
             }
+        }
+        catch (HttpRequestException e){
+            throw new ConnectionRefuseExeption("Ошибка подключения",  _service.Name);
         }
         catch (Exception e) {
             throw new Exception(e.Message);

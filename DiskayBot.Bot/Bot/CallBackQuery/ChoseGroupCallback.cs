@@ -23,7 +23,7 @@ public class ChoseGroupCallback : AbstractBotCallBack {
             
             var keyboard = GetKeyboard();
             await botClient.SendMessage(chat_id,
-                "Вы уверены? \nПосле согласия вы попадёте в память Diskay 💫",
+                "Вы уверены? \nПосле согласия вы попадёте в память Diskay 💫\n \n(Ваш ник и ваша группа)",
                 ParseMode.Markdown,
                 replyMarkup: keyboard
             );

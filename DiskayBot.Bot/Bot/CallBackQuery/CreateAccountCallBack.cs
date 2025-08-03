@@ -30,12 +30,12 @@ public class CreateAccountCallBack : AbstractBotCallBack {
         if (query == "yes"){
             try {
                 var cash = await _redis.GetDataHash(ChatId);
-                var GroupId = cash.FirstOrDefault(x => x.Name.ToString() == "group_id").Value;
                 
-                var UserId = update.CallbackQuery.From.Id;
-                var Username =  update.CallbackQuery.From.Username;
-                
-                if (GroupId.HasValue){
+                if (cash != null){
+                    var GroupId = cash.FirstOrDefault(x => x.Name.ToString() == "group_id").Value;
+                    var UserId = update.CallbackQuery.From.Id;
+                    var Username =  update.CallbackQuery.From.Username;
+                    
                     var request = await _service.Registration(UserId, Username, GroupId.ToString());
                     if (request == HttpStatusCode.OK){
                         botClient.SendMessage(ChatId, $"Добро пожаловать, {Username}!", ParseMode.Markdown);
@@ -55,7 +55,7 @@ public class CreateAccountCallBack : AbstractBotCallBack {
         }
         else {
             await botClient.SendMessage(chat, "Операция была отклонена. ", ParseMode.Markdown);
-            _redis.DeleteData(ChatId);
+            await _redis.DeleteData(ChatId);
         }
     }
 }
