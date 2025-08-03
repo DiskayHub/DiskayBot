@@ -1,5 +1,6 @@
 using System;
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Messages;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;

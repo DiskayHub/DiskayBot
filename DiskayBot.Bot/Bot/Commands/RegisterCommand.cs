@@ -3,6 +3,7 @@ using DiskayBot.API.Contracts;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Exeptions;
+using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
 using Pipelines.Sockets.Unofficial;
 using Telegram.Bot;
