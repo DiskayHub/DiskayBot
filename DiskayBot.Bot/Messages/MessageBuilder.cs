@@ -1,23 +1,35 @@
 using DiskayBot.API.Contracts;
-using Telegram.Bot.Requests;
+using DiskayBot.API.Contracts.Service;
 
-namespace DiskayBot.Bot.Abstractions;
+namespace DiskayBot.Bot.Messages;
 
 public class MessageBuilder {
     public static string StartMessage() {
-        string result = string.Empty;
+        return
+            "Привет, я *Diskay* 💫\n\n" +
+            "Твой бот-помощник в _Колледже Цифровых Технологий_.\n\n" +
+            "Вот что я умею:\n\n" +
+            "📆 *Расписание*\n" +
+            "Покажу пары на сегодня, завтра или всю неделю.\n\n" +
+            "⚡️ *Свободные кабинеты*\n" +
+            "Найду аудитории без занятий прямо сейчас.\n\n" +
+            "_(И это только начало…)_";
+    }
 
-        result += "Привет, я Diskay 💫\n";
-        result += "\n";
-        result += "Персональный бот-помощник *Колледжа Цифровых Технологий*.\n";
-        result += "\n";
-        result += "Я разрабатываюсь для того, чтобы упростить получение, взаимодействие с данными колледжа.\n";
-        result += "Функционал, который тебе доступен:\n";
-        result += "\n";
-        result += "📆\nПолучение актуального расписания на неделю или на день.\n";
-        result += "⚡️\nПоиск свободных кабинетов.";
+    public static string CheckBotStatus(PingResponse response) {
         
-        return result;
+        string Emoji(string status) => status switch
+        {
+            "OK" => "✅",
+            "INACTIVE" => "❌",
+            _ => "❓"
+        };
+
+        return
+            $"Статус сервисов *Diskay* \n\n" +
+            $"*{response.serviceName}*  \n" +
+            $"- **Сервис:** `{response.serviceStatus}` {Emoji(response.serviceStatus)}  \n" +
+            $"- **База данных:** `{response.dataBaseStatus ?? "Неизвестно"}` {Emoji(response.dataBaseStatus)}";
     }
     
     public static string CreateAccount() {
@@ -25,7 +37,7 @@ public class MessageBuilder {
 
         result = "Привет!\n";
         result += "При создании профиля, выбирай *действительные данные*, они будут использоваться " +
-                  "для получения персонального расписания.\n";
+                  "для получения персональных данных.\n";
         result += "\n";
         result += "Если ошибся, или просто хочешь изменить настройки профиля, ты всегда это можешь сделать " +
                   "воспользовавшись командой:\n" +

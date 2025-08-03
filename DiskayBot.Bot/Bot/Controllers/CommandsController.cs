@@ -14,7 +14,8 @@ public class CommandsController {
         _commands = new Dictionary<string, AbstractBotCommand> {
             { "/start", new StartCommand() },
             { "/create_account", new RegisterCommand(redis, service) },
-            { "/show_profile", new ShowProfileCommand(redis, service) }
+            { "/show_profile", new ShowProfileCommand(redis, service) },
+            { "/check_bot_status", new CheckServicesStatus(service) }
         };
     }
 

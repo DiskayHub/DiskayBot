@@ -1,10 +1,12 @@
 using System;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Groups;
+using DiskayBot.API.Contracts.Service;
 
 namespace DiskayBot.API.Services;
 
@@ -15,6 +17,30 @@ public class MemoryService{
     public MemoryService(HttpClient client) {
         _client = client;
         Name = "DiskayMemory";
+    }
+
+    public async Task<PingResponse?> PingService() {
+        try{
+            var response = await _client.GetAsync("http://localhost:5014/api/Service/Ping");
+
+            if (response.IsSuccessStatusCode){
+                var content = await response.Content.ReadAsStringAsync();
+                var responseStatus = JsonSerializer.Deserialize<PingResponse>(content);
+                return responseStatus;
+            }
+
+            return null;
+        }
+        catch (HttpRequestException){
+            var responseStatus = new PingResponse(
+                serviceName: "DiskayMemory",
+                serviceStatus: "INACTIVE"
+            );
+            return responseStatus;
+        }
+        catch (Exception ex){
+            throw new Exception(ex.Message);
+        }
     }
 
     public async Task<HttpStatusCode> Registration(long userId, string userName, string groupId) {
