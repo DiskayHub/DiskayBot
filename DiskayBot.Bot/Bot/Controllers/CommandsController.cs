@@ -10,12 +10,12 @@ namespace DiskayBot.Bot.Bot.Controllers;
 public class CommandsController {
     private readonly Dictionary<string, AbstractBotCommand> _commands;
 
-    public CommandsController(RedisController redis, MemoryService service) {
+    public CommandsController(RedisController redis, UserService userService, ScheduleService scheduleService) {
         _commands = new Dictionary<string, AbstractBotCommand> {
             { "/start", new StartCommand() },
-            { "/create_account", new RegisterCommand(redis, service) },
-            { "/show_profile", new ShowProfileCommand(redis, service) },
-            { "/check_bot_status", new CheckServicesStatus(service) }
+            { "/create_account", new RegisterCommand(redis, userService) },
+            { "/show_profile", new ShowProfileCommand(redis, userService) },
+            { "/check_bot_status", new CheckServicesStatus(userService, scheduleService) }
         };
     }
 

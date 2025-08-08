@@ -10,9 +10,9 @@ namespace DiskayBot.Bot.Bot.Controllers;
 
 public class ChouseCourseCallBack : AbstractBotCallBack {
     private readonly RedisController _redis;
-    private readonly MemoryService _service;
+    private readonly UserService _service;
 
-    public ChouseCourseCallBack(RedisController redis, MemoryService service) : base("course") {
+    public ChouseCourseCallBack(RedisController redis, UserService service) : base("course") {
         _redis = redis;
         _service = service;
     }

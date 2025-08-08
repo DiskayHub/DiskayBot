@@ -16,7 +16,8 @@ public class MessageBuilder {
             "_(И это только начало…)_";
     }
 
-    public static string CheckBotStatus(PingResponse response) {
+    public static string CheckBotStatus(List<PingResponse?> response) {
+        string message = "Статус сервисов *Diskay*\n\n";
         
         string Emoji(string status) => status switch
         {
@@ -25,11 +26,13 @@ public class MessageBuilder {
             _ => "❓"
         };
 
-        return
-            $"Статус сервисов *Diskay* \n\n" +
-            $"*{response.serviceName}*  \n" +
-            $"- **Сервис:** `{response.serviceStatus}` {Emoji(response.serviceStatus)}  \n" +
-            $"- **База данных:** `{response.dataBaseStatus ?? "Неизвестно"}` {Emoji(response.dataBaseStatus)}";
+        foreach (var service in response){
+            message += $"**Сервис:** *{service.serviceName}* {Emoji(service.serviceStatus)} \n";
+            message += $"- **База данных:** `{service.dataBaseStatus ?? "Неизвестно"}` {Emoji(service.dataBaseStatus)}";
+            message += "\n\n";
+        }
+
+        return message;
     }
     
     public static string CreateAccount() {

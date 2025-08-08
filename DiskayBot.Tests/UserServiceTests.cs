@@ -10,7 +10,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DiskayBot.Tests;
 
-public class MemoryServiceTests {
+public class UserServiceTests {
     [Fact]
     public async Task RegistrationReturnsOkWhenResponseIsSuccess() {
         var handlerMock = new Mock<HttpMessageHandler>();
@@ -27,7 +27,7 @@ public class MemoryServiceTests {
             });
         
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new MemoryService(httpClient);
+        var service = new UserService(httpClient);
 
         var result = await service.Registration(100, "user", "123");
         
@@ -50,7 +50,7 @@ public class MemoryServiceTests {
             });
         
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new MemoryService(httpClient);
+        var service = new UserService(httpClient);
         
         var result = await service.Registration(100, "user", "123");
     }
@@ -69,7 +69,7 @@ public class MemoryServiceTests {
             .ThrowsAsync(new HttpRequestException("Simulated network failure")
             );
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new MemoryService(httpClient);
+        var service = new UserService(httpClient);
         
         var result = await service.Registration(100, "user", "123");
         
@@ -98,7 +98,7 @@ public class MemoryServiceTests {
             });
         
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new MemoryService(httpClient);
+        var service = new UserService(httpClient);
         
         var result = await service.Authorization(123);
         
@@ -123,7 +123,7 @@ public class MemoryServiceTests {
             });
         
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new MemoryService(httpClient);
+        var service = new UserService(httpClient);
         
         var result = await service.Authorization(123);
         

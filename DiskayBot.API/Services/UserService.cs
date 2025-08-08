@@ -10,18 +10,20 @@ using DiskayBot.API.Contracts.Service;
 
 namespace DiskayBot.API.Services;
 
-public class MemoryService{
+public class UserService{
     private readonly HttpClient _client;
+    private readonly string _baseUrl;
     public string Name { get; }
 
-    public MemoryService(HttpClient client) {
+    public UserService(HttpClient client,  string baseUrl, string name) {
         _client = client;
-        Name = "DiskayMemory";
+        _baseUrl = baseUrl;
+        Name = name;
     }
 
     public async Task<PingResponse?> PingService() {
         try{
-            var response = await _client.GetAsync("http://localhost:5014/api/Service/Ping");
+            var response = await _client.GetAsync($"{_baseUrl}/api/Service/Ping");
 
             if (response.IsSuccessStatusCode){
                 var content = await response.Content.ReadAsStringAsync();
@@ -32,11 +34,7 @@ public class MemoryService{
             return null;
         }
         catch (HttpRequestException){
-            var responseStatus = new PingResponse(
-                serviceName: "DiskayMemory",
-                serviceStatus: "INACTIVE"
-            );
-            return responseStatus;
+            return PingResponse.CreateDefault(Name);
         }
         catch (Exception ex){
             throw new Exception(ex.Message);
@@ -51,7 +49,7 @@ public class MemoryService{
                 group_id = groupId
             });
             var content = new StringContent(json_content, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _client.PostAsync("http://localhost:5014/api/TelegramUsers/AddUser", content);
+            HttpResponseMessage response = await _client.PostAsync($"{_baseUrl}/api/TelegramUsers/AddUser", content);
             
             Console.WriteLine(response.RequestMessage);
             if (response.IsSuccessStatusCode) {
@@ -73,7 +71,7 @@ public class MemoryService{
             });
             var content = new StringContent(json_content, Encoding.UTF8, "application/json");
             HttpResponseMessage response =
-                await _client.GetAsync($"http://localhost:5014/api/TelegramUsers/GetById?user_id={userId}");
+                await _client.GetAsync($"{_baseUrl}/api/TelegramUsers/GetById?user_id={userId}");
 
             if (response.IsSuccessStatusCode){
                 var responseBody = await response.Content.ReadAsStringAsync();
@@ -98,7 +96,7 @@ public class MemoryService{
 
     public async Task<List<GroupResponse>?> GetAllGroups() {
         try {
-            HttpResponseMessage response = await _client.GetAsync("http://localhost:5014/api/Groups/GetAll");
+            HttpResponseMessage response = await _client.GetAsync($"{_baseUrl}/api/Groups/GetAll");
             if (response.IsSuccessStatusCode) {
                 string ResponseBody = await response.Content.ReadAsStringAsync();
                 var groups = JsonSerializer.Deserialize<List<GroupResponse>>(ResponseBody);
@@ -119,7 +117,7 @@ public class MemoryService{
     public async Task<List<GroupResponse>?> GetCourseGroups(int course) {
         try{
             HttpResponseMessage response =
-                await _client.GetAsync($"http://localhost:5014/api/Groups/GetByCourse?course={course}");
+                await _client.GetAsync($"{_baseUrl}/api/Groups/GetByCourse?course={course}");
             if (response.IsSuccessStatusCode){
                 string ResponseBody = await response.Content.ReadAsStringAsync();
                 var groups = JsonSerializer.Deserialize<List<GroupResponse>>(ResponseBody);

@@ -13,7 +13,8 @@ namespace DiskayBot.Bot.Bot;
 public class TelegramBot {
     private TelegramBotClient bot;
     private CancellationTokenSource cts_token = new();
-    private MemoryService _service;
+    private ScheduleService _scheduleService;
+    private UserService _userService;
     private RedisController _redis;
     private CommandsController _commands;
     private CallBackController _callbacks;
@@ -38,7 +39,14 @@ public class TelegramBot {
         return null;
     }
 
-    public TelegramBot(string bot_token) {
+    public TelegramBot(string bot_token, RedisController redis, UserService userService, ScheduleService scheduleService ) {
+        _redis = redis;
+        _userService = userService;
+        _scheduleService = scheduleService;
+        
+        _commands = new CommandsController(_redis, _userService, scheduleService);
+        _callbacks = new  CallBackController(_redis, _userService);
+        
         bot = new TelegramBotClient(bot_token);
         bot.OnUpdate += OnUpdate;
     }
@@ -114,14 +122,6 @@ public class TelegramBot {
 
     public async Task Start() {
         try{
-            var redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
-            _redis = new RedisController(redis.GetDatabase());
-            _service = new MemoryService(new HttpClient());
-            _commands = new CommandsController(_redis, _service);
-            _callbacks = new CallBackController(_redis,  _service);
-            
-            Console.WriteLine("- - REDIS START WORKING - -");
-            
             var bot_info = await bot.GetMe();
             
             Console.WriteLine(

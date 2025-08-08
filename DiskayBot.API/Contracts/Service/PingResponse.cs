@@ -10,4 +10,8 @@ public class PingResponse {
         this.serviceStatus = serviceStatus;
         this.dataBaseStatus = dataBaseStatus;
     }
+
+    public static PingResponse CreateDefault(string serviceName) {
+        return new PingResponse(serviceName, "INACTIVE");
+    }
 };

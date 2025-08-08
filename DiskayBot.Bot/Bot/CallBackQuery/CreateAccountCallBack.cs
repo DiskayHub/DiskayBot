@@ -10,9 +10,9 @@ namespace DiskayBot.Bot.Bot.CallBackQuery;
 
 public class CreateAccountCallBack : AbstractBotCallBack {
     private readonly RedisController _redis;
-    private readonly MemoryService _service;
+    private readonly UserService _service;
 
-    public CreateAccountCallBack(RedisController redis, MemoryService service) : base("createAccount") {
+    public CreateAccountCallBack(RedisController redis, UserService service) : base("createAccount") {
         _redis = redis;
         _service = service;
     }

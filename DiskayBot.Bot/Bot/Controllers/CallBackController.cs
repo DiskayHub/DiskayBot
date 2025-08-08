@@ -10,7 +10,7 @@ namespace DiskayBot.Bot.Bot.Controllers;
 public class CallBackController {
     private readonly Dictionary<string, AbstractBotCallBack> _callback;
 
-    public CallBackController(RedisController redis, MemoryService service) {
+    public CallBackController(RedisController redis, UserService service) {
         _callback = new Dictionary<string, AbstractBotCallBack> {
             {"course", new ChouseCourseCallBack(redis, service)},
             {"group", new ChoseGroupCallback(redis) },

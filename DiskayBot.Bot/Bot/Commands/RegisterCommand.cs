@@ -15,9 +15,9 @@ namespace DiskayBot.Bot.Bot.Commands;
 
 public class RegisterCommand : AbstractBotCommand {
     private readonly RedisController _redis;
-    private readonly MemoryService _service;
+    private readonly UserService _service;
 
-    public RegisterCommand(RedisController redis, MemoryService service) : base("/create_account") {
+    public RegisterCommand(RedisController redis, UserService service) : base("/create_account") {
         _redis = redis;
         _service = service;
     }
