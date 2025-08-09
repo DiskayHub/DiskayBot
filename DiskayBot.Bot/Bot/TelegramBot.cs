@@ -82,7 +82,11 @@ public class TelegramBot {
                 var parts = callbackQuery.Split("_", 2);
 
                 string callback_name = parts[0];
-                string? query = parts[1];
+                string? query = null;
+                
+                if (parts.Length > 1){
+                    query = parts[1];   
+                }
 
                 var callback = _callbacks.GetCallBack(callback_name);
                 if (callback != null){

@@ -49,7 +49,7 @@ public class UserService{
                 group_id = groupId
             });
             var content = new StringContent(json_content, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _client.PostAsync($"{_baseUrl}/api/TelegramUsers/AddUser", content);
+            var response = await _client.PostAsync($"{_baseUrl}/api/UserManager/AddTelegramUser", content);
             
             Console.WriteLine(response.RequestMessage);
             if (response.IsSuccessStatusCode) {

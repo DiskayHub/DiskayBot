@@ -1,5 +1,6 @@
 using System;
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
 using StackExchange.Redis;
 using Telegram.Bot;
@@ -9,28 +10,23 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DiskayBot.Bot.Bot.Controllers;
 
-public class ChoseGroupCallback : AbstractBotCallBack {
+public class CreateAccountOffer : AbstractBotCallBack {
     private readonly RedisController _redis;
 
-    public ChoseGroupCallback(RedisController redis) : base("group") {
+    public CreateAccountOffer(RedisController redis) : base("createAccountOffer") {
         _redis = redis;
     }
 
     public override async Task ExecuteAsync(TelegramBotClient botClient, Update update, CancellationToken cancellationToken, string callBack) {
         Chat chat_id = update.CallbackQuery!.Message!.Chat;
-
         try{  
             
             var keyboard = GetKeyboard();
             await botClient.SendMessage(chat_id,
-                "Вы уверены? \nПосле согласия вы попадёте в память Diskay 💫\n \n(Ваш ник и ваша группа)",
+                MessageBuilder.RegisterOffer(),
                 ParseMode.Markdown,
                 replyMarkup: keyboard
             );
-            var hash = new HashEntry[] {
-                new HashEntry("group_id", callBack),
-            };
-            await _redis.SaveDataHash(chat_id.Id.ToString(), hash, TimeSpan.FromSeconds(100));
         }
         catch (Exception e){
             throw new Exception(e.Message);

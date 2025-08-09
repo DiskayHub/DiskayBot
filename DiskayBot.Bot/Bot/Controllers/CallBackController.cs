@@ -13,7 +13,8 @@ public class CallBackController {
     public CallBackController(RedisController redis, UserService service) {
         _callback = new Dictionary<string, AbstractBotCallBack> {
             {"course", new ChouseCourseCallBack(redis, service)},
-            {"group", new ChoseGroupCallback(redis) },
+            {"group", new BeforeCreateAccountCallBack(redis) },
+            {"createAccountOffer", new CreateAccountOffer(redis)},
             {"createAccount", new CreateAccountCallBack(redis, service) }
         };
     }

@@ -18,9 +18,12 @@ public class ChouseCourseCallBack : AbstractBotCallBack {
     }
     public override async Task ExecuteAsync(TelegramBotClient botClient, Update update, CancellationToken cancellationToken, string? callBack) {
         var chat =  update.CallbackQuery.Message.Chat;
+        var messageId = update.CallbackQuery.Message.MessageId;
         var userId = update.CallbackQuery.From.Id;
 
         try{
+            await botClient.DeleteMessage(chat, messageId);
+                
             var keyboard = await GetReplyMarkup(int.Parse(callBack));
             await botClient.SendMessage(
                 chat,

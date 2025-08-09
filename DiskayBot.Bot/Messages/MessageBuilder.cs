@@ -70,4 +70,20 @@ public class MessageBuilder {
         
         return result;
     }
+
+    public static string RegisterOffer() {
+        return "Вы уверены? \nПосле согласия вы попадёте в память Diskay 💫\n \n(Ваш ник и ваша группа)";
+    }
+
+    public static string AdditionalInfoOffer() {
+        return $"Отлично, вы уже можете создать профиль!\n\n" +
+               $"Но не спешите!\n" +
+               $"Вы можете указать *дополнительную информацию* о ваших подгруппах, " +
+               $"чтобы не получать в расписании то, что вам не нужно.\n\n" +
+               $"Как тебе?";
+    }
+
+    public static string RegisterTimeOut() {
+        return "Таймаут. Попробуйте ещё раз.";
+    }
 }

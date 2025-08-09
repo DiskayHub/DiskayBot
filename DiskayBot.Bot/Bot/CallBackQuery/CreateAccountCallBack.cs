@@ -1,6 +1,7 @@
 using System.Net;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -38,14 +39,15 @@ public class CreateAccountCallBack : AbstractBotCallBack {
                     
                     var request = await _service.Registration(UserId, Username, GroupId.ToString());
                     if (request == HttpStatusCode.OK){
-                        botClient.SendMessage(ChatId, $"Добро пожаловать, {Username}!", ParseMode.Markdown);
+                        await botClient.SendMessage(ChatId, $"Добро пожаловать, {Username}!", ParseMode.Markdown);
+                        await _redis.DeleteData(ChatId);
                     }
                     else {
-                        botClient.SendMessage(ChatId, $"Ошибка при отправке данных", ParseMode.Markdown);
+                        await botClient.SendMessage(ChatId, $"Diskay не может запомнить вас :(", ParseMode.Markdown);
                     }
                 }
                 else {
-                    await botClient.SendMessage(chat, "Таймаут. Попробуйте ещё раз.", ParseMode.Markdown);   
+                    await botClient.SendMessage(chat, MessageBuilder.RegisterTimeOut(), ParseMode.Markdown);   
                 }
             }
             catch (Exception e){
