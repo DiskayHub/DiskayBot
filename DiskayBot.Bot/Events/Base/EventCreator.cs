@@ -2,7 +2,7 @@ using DiskayBot.Bot.Abstractions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace DiskayBot.Bot.Events;
+namespace DiskayBot.Bot.Events.Base;
 
 public class EventCreator {
     private readonly UpdateParser _updateParser = new();

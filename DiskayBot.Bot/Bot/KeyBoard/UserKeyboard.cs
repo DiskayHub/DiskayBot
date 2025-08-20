@@ -11,12 +11,12 @@ public class UserKeyboard {
         _buttons = buttons.ToDictionary(button => button.Name);
     }
 
-    public async Task PressButton(string name) {
-        var userButton = _buttons.TryGetValue(name, out var button) ? button : null;
-        if (button != null){
-            await button.Press();
-        }
-    }
+    // public async Task PressButton(string name) {
+    //     var userButton = _buttons.TryGetValue(name, out var button) ? button : null;
+    //     if (button != null){
+    //         await button.Press();
+    //     }
+    // }
 
     public InlineKeyboardMarkup GetInlineKeyboard() {
         List<InlineKeyboardButton> inlineButtons = _buttons.Keys.Select(buttonName => {

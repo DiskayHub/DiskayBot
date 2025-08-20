@@ -7,7 +7,7 @@ public class CallbackQueryUserEvent : UserEvent {
     public readonly string? Query;
 
     public CallbackQueryUserEvent(UpdateInfo info, string callBackQuery) : base(info) {
-        var parts = callBackQuery.Split('_');
+        var parts = callBackQuery.Split('=');
         
         if (parts.Length == 2){
             Name = parts[0];

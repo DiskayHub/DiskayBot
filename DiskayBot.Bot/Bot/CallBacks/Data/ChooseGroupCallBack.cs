@@ -22,13 +22,6 @@ public class ChooseGroupCallback : BotCommand {
     }
     
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-        var callBackEvent = (CallbackQueryUserEvent)evt;
-        await _eventRegister.ShowGroupsHandler(new ShowGroupsEvent(
-            bot,
-            callBackEvent,
-            short.Parse(callBackEvent.Query),
-            "Выберите группу",
-            "group"
-        ), token);
+        throw new NotImplementedException();
     }
 }

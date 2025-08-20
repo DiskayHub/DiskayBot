@@ -25,7 +25,7 @@ public class RegisterCommand : BotCommand {
         
         _keyboardHandler.BindKeyboard(new UserKeyboard(
             name, new List<UserButton>() {
-                new UserButton("Продолжить", "continue", () => th);
+                new UserButton("Продолжить", "continue")
             })
         );
     }
@@ -45,7 +45,7 @@ public class RegisterCommand : BotCommand {
                             evt.Chat,
                             MessageBuilder.CreateAccount(),
                             ParseMode.Markdown,
-                            replyMarkup: keyboard
+                            replyMarkup: _keyboardHandler.GetKeyBoard(Name).GetInlineKeyboard()
                         );
                     }
                     else{
