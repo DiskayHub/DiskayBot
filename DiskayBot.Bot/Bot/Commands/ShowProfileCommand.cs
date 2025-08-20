@@ -3,50 +3,44 @@ using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
-using StackExchange.Redis;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using BotCommand = DiskayBot.Bot.Abstractions.BotCommand;
 
 namespace DiskayBot.Bot.Bot.Commands;
 
-public class ShowProfileCommand : AbstractBotCommand {
+public class ShowProfileCommand : BotCommand {
     private readonly RedisController _redis;
-    private readonly UserService _service;
+    private readonly UserService _userService;
 
-    public ShowProfileCommand(RedisController redis, UserService service) : base("/show_profile")  {
+    public ShowProfileCommand(string name, RedisController redis, UserService userService) : base(name)  {
         _redis = redis;
-        _service = service;
+        _userService = userService;
     }
-    public override async Task ExecuteAsync(TelegramBotClient botClient, Update update, CancellationToken cancellationToken) {
-        var username = update.Message.From.Username;
-        var userId = update.Message.From.Id;
-        var chat =  update.Message.Chat;
-
+    public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
         try{
-            var redis_request = await _redis.GetUser(username);
+            var redisRequest = await _redis.GetUser(evt.Username);
 
-            if (redis_request != null){
-                string result = MessageBuilder.ShowProfile(redis_request);
-                await botClient.SendMessage(chat, result, ParseMode.Markdown);
+            if (redisRequest != null){
+                string result = MessageBuilder.ShowProfile(redisRequest);
+                await bot.SendMessage(evt.Chat, result, ParseMode.Markdown);
             }
             else{
-                var database_request = await _service.Authorization(userId);
+                var databaseRequest = await _userService.Authorization(evt.UserId);
 
-                if (database_request != null){
-                    string result = MessageBuilder.ShowProfile(database_request);
-                    await botClient.SendMessage(chat, result, ParseMode.Markdown);
-                    _redis.SaveUser(username, database_request);
+                if (databaseRequest != null){
+                    string result = MessageBuilder.ShowProfile(databaseRequest);
+
+                    await bot.SendMessage(evt.Chat, result, ParseMode.Markdown);
+                    await _redis.SaveUser(evt.Username, databaseRequest);
                 }
                 else
-                    await botClient.SendMessage(chat, MessageBuilder.NotRegistered(), ParseMode.Markdown);
+                    await bot.SendMessage(evt.Chat, MessageBuilder.NotRegistered(), ParseMode.Markdown);
             }
         }
-        catch (HttpRequestException e){
-            throw new ConnectionRefuseExeption("Ошибка подключения",  _service.Name);
-        }
-        catch (Exception e) {
-            throw new Exception(e.Message);
+        catch (Exception e){
+            
         }
     }
 }

@@ -83,7 +83,7 @@ public class MessageBuilder {
                $"Как тебе?";
     }
 
-    public static string RegisterTimeOut() {
-        return "Таймаут. Попробуйте ещё раз.";
+    public static string Settings() {
+        return "Настройки";
     }
 }

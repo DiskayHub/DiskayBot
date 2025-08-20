@@ -1,7 +1,15 @@
 using System.Net;
 using DiskayBot.API.Services;
-using DiskayBot.Bot.Bot.Controllers;
+using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Bot.CallBacks.Data;
+using DiskayBot.Bot.Bot.Commands;
+using DiskayBot.Bot.Bot.Events;
 using DiskayBot.Bot.Bot.Exeptions;
+using DiskayBot.Bot.Bot.KeyBoard;
+using DiskayBot.Bot.Bot.Registers;
+using DiskayBot.Bot.Events;
+using DiskayBot.Bot.Interfaces;
+using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
 using StackExchange.Redis;
 using Telegram.Bot;
@@ -13,114 +21,61 @@ namespace DiskayBot.Bot.Bot;
 public class TelegramBot {
     private TelegramBotClient bot;
     private CancellationTokenSource cts_token = new();
-    private ScheduleService _scheduleService;
-    private UserService _userService;
-    private RedisController _redis;
-    private CommandsController _commands;
-    private CallBackController _callbacks;
     
-    Chat? extract_Chat(Update update) {
-        switch (update.Type) {
-            case UpdateType.Message:
-                return update.Message?.Chat;
-            case UpdateType.CallbackQuery:
-                return update?.CallbackQuery?.Message?.Chat;
-        }
-        return null;
-    }
-
-    long? extract_UserId(Update update) {
-        switch (update.Type){
-            case UpdateType.Message:
-                return update.Message?.From.Id;
-            case UpdateType.CallbackQuery:
-                return update.CallbackQuery?.From.Id;
-        }
-        return null;
-    }
-
-    public TelegramBot(string bot_token, RedisController redis, UserService userService, ScheduleService scheduleService ) {
+    private readonly ScheduleService _scheduleService;
+    private readonly UserService _userService;
+    private readonly RedisController _redis;
+    
+    private readonly CommandRegister _commandRegister;
+    private readonly EventRegister _eventRegister;
+    
+    private readonly EventCreator _eventCreator;
+    public TelegramBot(string bot_token, RedisController redis, UserService userService, ScheduleService scheduleService) {
         _redis = redis;
         _userService = userService;
         _scheduleService = scheduleService;
+        _eventCreator = new EventCreator();
         
-        _commands = new CommandsController(_redis, _userService, scheduleService);
-        _callbacks = new  CallBackController(_redis, _userService);
+        var commands = new List<ICommand>() {
+            new StartCommand("/start"),
+            new CheckStatusCommand("/check_bot_status", userService, scheduleService),
+            new ShowProfileCommand("/show_profile", redis, userService),
+            new RegisterCommand("/create_account", redis, userService, "chooseCourse")
+        };
+
+        var eventHandlers = new List<EventProcessor>() {
+            new SaveGroupHandler("group", redis)
+        };
+        
+        _commandRegister = new CommandRegister(commands);
+        _eventRegister = new EventRegister(eventHandlers);
         
         bot = new TelegramBotClient(bot_token);
         bot.OnUpdate += OnUpdate;
     }
 
     protected async Task OnUpdate(Update update) {
-        Chat? chat = extract_Chat(update);
-        long? user_id = extract_UserId(update);
-        
-        
-        
-        cts_token.CancelAfter(2000);
-
         try{
+            cts_token.CancelAfter(2000);
             Console.Write("\n- - - ОБРАБОТКА ЗАПРОСА - - -\n");
-            Console.WriteLine("Diskay принял сообщение");
 
-            if (update.Type == UpdateType.Message && update.Message != null && update.Message.Text != null){
-                string text = update.Message.Text;
-                Console.WriteLine($"Хм, интересно, что-же он хотел этим сказать: {text}");
-                var command = _commands.GetCommand(text);
-                if (command != null){
-                    Console.WriteLine("О, я знаю эту команду!");
-                    await command.ExecuteAsync(bot, update, cts_token.Token);
-                }
-                else{
-                    Console.WriteLine("Ничё не понял но интересно");
-                }
+            var evt = _eventCreator.Create(update);
+
+            Console.WriteLine($"Diskay принял сообщение: {evt.GetContent()}");
+
+            var command = _commandRegister.GetCommand(evt.GetContent());
+            var @event = _eventRegister.GetEvent(evt.GetContent());
+
+            if (@event != null){
+                await @event.HandleAsync(evt, cts_token.Token);
             }
 
-            else if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery?.Data != null){
-                string callbackQuery = update.CallbackQuery.Data;
-
-                var parts = callbackQuery.Split("_", 2);
-
-                string callback_name = parts[0];
-                string? query = null;
-                
-                if (parts.Length > 1){
-                    query = parts[1];   
-                }
-
-                var callback = _callbacks.GetCallBack(callback_name);
-                if (callback != null){
-
-                    await bot.AnswerCallbackQuery(update.CallbackQuery.Id);
-                    await callback.ExecuteAsync(bot, update, cts_token.Token, query);
-                }
-
-                Console.WriteLine(callbackQuery);
+            if (command != null){
+                await command.ExecuteAsync(bot, cts_token.Token, evt);
             }
-
-            Console.WriteLine("- - - ЗАПРОС ОБРАБОТАН - - -");
         }
-
-        catch (OperationCanceledException){
-            await bot.SendMessage(chat, "Превышение времени запроса ⌛", ParseMode.Markdown);
-        }
-
-        catch (ConnectionRefuseExeption e){
-            await bot.SendMessage(chat, "Diskay не получил ответа на запрос", ParseMode.Markdown);
-        }
-
-        catch (HttpRequestException ex){
-            await bot.SendMessage(chat, "Diskay не смог обработать запрос", ParseMode.Markdown);
-        }
-
-        catch (NullReferenceException ex){
-            await bot.SendMessage(chat, "Diskay не смог отправить сообщение 😔", ParseMode.Markdown);
-        }
-
-        catch (Exception ex) {
-            Console.WriteLine(ex.GetType());
-            Console.WriteLine(ex.Message);
-            await bot.SendMessage(chat, "Неизвестная ошибка ☠", ParseMode.Markdown);
+        catch (Exception e) {
+            
         }
     }
 

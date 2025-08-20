@@ -1,18 +1,14 @@
-using System;
+using DiskayBot.Bot.Interfaces;
 using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DiskayBot.Bot.Abstractions;
 
-public abstract class AbstractBotCommand : ICommand {
-    public string Name {get;}
+public abstract class BotCommand : ICommand {
+    public string Name { get; }
 
-    public AbstractBotCommand(string command) {
-        Name = command;
+    public BotCommand(string name) {
+        Name = name;
     }
 
-    public abstract Task ExecuteAsync(TelegramBotClient botClient, Update update, CancellationToken cancellationToken);
-    
-    public virtual ReplyMarkup GetKeyboard() => null;
+    public abstract Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt);
 }
