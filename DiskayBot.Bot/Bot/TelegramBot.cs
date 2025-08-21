@@ -31,20 +31,20 @@ public class TelegramBot {
     private readonly EventRegister _eventRegister;
     
     private readonly EventCreator _eventCreator;
-    private readonly KeyboardHandler _keyboardHandler;
+    private readonly GlobalKeyboard _globalKeyboard;
     public TelegramBot(string bot_token, RedisController redis, UserService userService, ScheduleService scheduleService) {
         _redis = redis;
         _userService = userService;
         _scheduleService = scheduleService;
         _eventCreator = new EventCreator();
         
-        _keyboardHandler = new KeyboardHandler();
+        _globalKeyboard = new GlobalKeyboard();
         
         var commands = new List<ICommand>() {
             new StartCommand("/start"),
             new CheckStatusCommand("/check_bot_status", userService, scheduleService),
             new ShowProfileCommand("/show_profile", redis, userService),
-            new RegisterCommand("/create_account", redis, userService, _keyboardHandler)
+            new RegisterCommand("/create_account", redis, userService, _globalKeyboard)
         };
 
         var eventHandlers = new List<EventProcessor>() {
@@ -69,7 +69,7 @@ public class TelegramBot {
 
             var command = _commandRegister.GetCommand(evt.GetContent());
             var @event = _eventRegister.GetEvent(evt.GetContent());
-            var keyboard = _keyboardHandler.GetKeyBoard(evt.GetContent());
+            var keyboard = _globalKeyboard.GetKeyBoard(evt.GetContent());
             
             if (@event != null){
                 await @event.HandleAsync(evt, cts_token.Token);

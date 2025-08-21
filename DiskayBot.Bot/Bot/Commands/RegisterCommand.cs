@@ -2,6 +2,7 @@ using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Bot.KeyBoard;
+using DiskayBot.Bot.Bot.KeyBoard.Scripts;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
@@ -16,16 +17,16 @@ namespace DiskayBot.Bot.Bot.Commands;
 public class RegisterCommand : BotCommand {
     private readonly RedisController _redis;
     private readonly UserService _userService;
-    private readonly KeyboardHandler _keyboardHandler;
+    private readonly GlobalKeyboard _globalKeyboard;
 
-    public RegisterCommand(string name, RedisController redis, UserService userService, KeyboardHandler keyboardHandler) : base(name) {
+    public RegisterCommand(string name, RedisController redis, UserService userService, GlobalKeyboard globalKeyboard) : base(name) {
         _redis = redis;
         _userService = userService;
-        _keyboardHandler = keyboardHandler;
+        _globalKeyboard = globalKeyboard;
         
-        _keyboardHandler.BindKeyboard(new UserKeyboard(
+        _globalKeyboard.BindKeyboard(new UserKeyboard(
             name, new List<UserButton>() {
-                new UserButton("Продолжить", "continue")
+                new UserButton("Продолжить", "continue=showAllCourses")
             })
         );
     }
@@ -45,7 +46,7 @@ public class RegisterCommand : BotCommand {
                             evt.Chat,
                             MessageBuilder.CreateAccount(),
                             ParseMode.Markdown,
-                            replyMarkup: _keyboardHandler.GetKeyBoard(Name).GetInlineKeyboard()
+                            replyMarkup: _globalKeyboard.GetKeyBoard(Name)!.GetInlineKeyboard()
                         );
                     }
                     else{

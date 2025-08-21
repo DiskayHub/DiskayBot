@@ -1,13 +1,13 @@
 namespace DiskayBot.Bot.Bot.KeyBoard;
 
-public class KeyboardHandler {
+public class GlobalKeyboard {
     private readonly Dictionary<string, UserKeyboard> _keyBoards;
 
-    public KeyboardHandler() {
+    public GlobalKeyboard() {
         _keyBoards = new Dictionary<string, UserKeyboard>();
     }
     
-    public KeyboardHandler(List<UserKeyboard> userKeyboards) {
+    public GlobalKeyboard(List<UserKeyboard> userKeyboards) {
         _keyBoards = userKeyboards.ToDictionary(userKeyboard => userKeyboard.Name);
     }
 

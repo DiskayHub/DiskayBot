@@ -1,6 +1,6 @@
 using DiskayBot.Bot.Interfaces;
 
-namespace DiskayBot.Bot;
+namespace DiskayBot.Bot.Bot.Registers;
 
 public class CommandRegister {
     private readonly Dictionary<string, ICommand> _commands;

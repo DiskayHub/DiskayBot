@@ -8,15 +8,8 @@ public class UserKeyboard {
     
     public UserKeyboard(string name, List<UserButton> buttons) {
         Name = name;
-        _buttons = buttons.ToDictionary(button => button.Name);
+        _buttons = buttons.ToDictionary(button => button.Text);
     }
-
-    // public async Task PressButton(string name) {
-    //     var userButton = _buttons.TryGetValue(name, out var button) ? button : null;
-    //     if (button != null){
-    //         await button.Press();
-    //     }
-    // }
 
     public InlineKeyboardMarkup GetInlineKeyboard() {
         List<InlineKeyboardButton> inlineButtons = _buttons.Keys.Select(buttonName => {
