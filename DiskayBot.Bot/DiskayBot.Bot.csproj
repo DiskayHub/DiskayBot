@@ -20,4 +20,8 @@
     <ProjectReference Include="..\DiskayBot.Redis\DiskayBot.Redis.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Bot\KeyBoard\Scripts\" />
+  </ItemGroup>
+
 </Project>

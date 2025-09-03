@@ -16,18 +16,10 @@ namespace DiskayBot.Bot.Bot.Commands;
 public class RegisterCommand : BotCommand {
     private readonly RedisController _redis;
     private readonly UserService _userService;
-    private readonly KeyboardHandler _keyboardHandler;
 
-    public RegisterCommand(string name, RedisController redis, UserService userService, KeyboardHandler keyboardHandler) : base(name) {
+    public RegisterCommand(string name, RedisController redis, UserService userService) : base(name) {
         _redis = redis;
         _userService = userService;
-        _keyboardHandler = keyboardHandler;
-        
-        _keyboardHandler.BindKeyboard(new UserKeyboard(
-            name, new List<UserButton>() {
-                new UserButton("Продолжить", "continue", () => th);
-            })
-        );
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient botClient, CancellationToken token, UserEvent evt) {
@@ -44,8 +36,8 @@ public class RegisterCommand : BotCommand {
                         await botClient.SendMessage(
                             evt.Chat,
                             MessageBuilder.CreateAccount(),
-                            ParseMode.Markdown,
-                            replyMarkup: keyboard
+                            ParseMode.Markdown
+                            // replyMarkup: keyboard
                         );
                     }
                     else{

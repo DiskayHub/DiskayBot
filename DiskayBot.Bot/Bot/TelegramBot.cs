@@ -40,7 +40,8 @@ public class TelegramBot {
             new StartCommand("/start"),
             new CheckStatusCommand("/check_bot_status", userService, scheduleService),
             new ShowProfileCommand("/show_profile", redis, userService),
-            new RegisterCommand("/create_account", redis, userService, "chooseCourse")
+            new FastScheduleCommand(redis, scheduleService)
+            // new RegisterCommand("/create_account", redis, userService, "chooseCourse")
         };
 
         var eventHandlers = new List<EventProcessor>() {
@@ -64,11 +65,6 @@ public class TelegramBot {
             Console.WriteLine($"Diskay принял сообщение: {evt.GetContent()}");
 
             var command = _commandRegister.GetCommand(evt.GetContent());
-            var @event = _eventRegister.GetEvent(evt.GetContent());
-
-            if (@event != null){
-                await @event.HandleAsync(evt, cts_token.Token);
-            }
 
             if (command != null){
                 await command.ExecuteAsync(bot, cts_token.Token, evt);

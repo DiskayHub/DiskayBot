@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Microsoft.Extensions.Hosting;
 
-Env.Load();
+Env.Load("/home/laxerem/Documents/my_projects/DiskayHub/DiskayBot/DiskayBot.Bot/");
 
 string? botToken = Environment.GetEnvironmentVariable("BOT_TOKEN");
 

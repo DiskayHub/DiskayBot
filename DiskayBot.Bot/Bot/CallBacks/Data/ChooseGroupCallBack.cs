@@ -14,21 +14,21 @@ using BotCommand = DiskayBot.Bot.Abstractions.BotCommand;
 
 namespace DiskayBot.Bot.Bot.CallBacks.Data;
 
-public class ChooseGroupCallback : BotCommand {
-    private readonly EventRegister _eventRegister;
-
-    public ChooseGroupCallback(EventRegister eventRegister) : base("chooseGroup") {
-        _eventRegister = eventRegister;
-    }
-    
-    public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-        var callBackEvent = (CallbackQueryUserEvent)evt;
-        await _eventRegister.ShowGroupsHandler(new ShowGroupsEvent(
-            bot,
-            callBackEvent,
-            short.Parse(callBackEvent.Query),
-            "Выберите группу",
-            "group"
-        ), token);
-    }
-}
+// public class ChooseGroupCallback : BotCommand {
+//     private readonly EventRegister _eventRegister;
+//
+//     public ChooseGroupCallback(EventRegister eventRegister) : base("chooseGroup") {
+//         _eventRegister = eventRegister;
+//     }
+//     
+//     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
+//         var callBackEvent = (CallbackQueryUserEvent)evt;
+//         await _eventRegister.ShowGroupsHandler(new ShowGroupsEvent(
+//             bot,
+//             callBackEvent,
+//             short.Parse(callBackEvent.Query),
+//             "Выберите группу",
+//             "group"
+//         ), token);
+//     }
+// }

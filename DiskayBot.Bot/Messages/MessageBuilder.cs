@@ -1,4 +1,6 @@
+using System.Text;
 using DiskayBot.API.Contracts;
+using DiskayBot.API.Contracts.Schedule;
 using DiskayBot.API.Contracts.Service;
 
 namespace DiskayBot.Bot.Messages;
@@ -83,7 +85,54 @@ public class MessageBuilder {
                $"Как тебе?";
     }
 
-    public static string Settings() {
-        return "Настройки";
+    public static string ShowSchedule(DayScheduleResponse daySchedule)
+    {
+        var sb = new StringBuilder();
+    
+        sb.AppendLine($"📅 *{daySchedule.date:dd.MM.yyyy}* | 🫡 *{daySchedule.mainGroup}*");
+        sb.AppendLine();
+    
+        if (daySchedule.items == null || daySchedule.items.Count == 0)
+        {
+            sb.AppendLine("🎉 *Пар нет! Отдыхаем!*");
+            return sb.ToString();
+        }
+    
+        var sortedItems = daySchedule.items.OrderBy(x => x.startTime).ToList();
+    
+        foreach (var item in sortedItems)
+        {
+            sb.AppendLine($"--> *{item.startTime:HH:mm}-{item.endTime:HH:mm}*");
+            sb.AppendLine($"Предмет: *{item.name}*");
+        
+            if (!string.IsNullOrEmpty(item.description))
+            {
+                sb.AppendLine($"Описание: **{item.description}**");
+            }
+        
+            if (!string.IsNullOrEmpty(item.room_name)) {
+                sb.AppendLine($"Аудитория: {item.room_name}");
+            }
+            else {
+                sb.AppendLine($"Аудитория не указана 🤨");
+            }
+            
+        
+            if (item.subGroups != null && item.subGroups.Count > 0) {
+                foreach (var subGroup in item.subGroups)
+                {
+                    var subInfo = $"   👥 {subGroup.name}";
+                    if (!string.IsNullOrEmpty(subGroup.roomName))
+                    {
+                        subInfo += $" → {subGroup.roomName}";
+                    }
+                    sb.AppendLine(subInfo);
+                }
+            }
+        
+            sb.AppendLine();
+        }
+    
+        return sb.ToString();
     }
 }
