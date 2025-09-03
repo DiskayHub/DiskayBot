@@ -23,7 +23,7 @@ public class FastScheduleCommand : BotCommand {
             var user = await _redis.GetUser(evt.Username);
 
             if (user != null) {
-                var daySchedule = await _schedule.GetDaySchedule(DateOnly.FromDateTime(DateTime.Now).AddDays(1), $"ИТ{user.group_name}");
+                var daySchedule = await _schedule.GetDaySchedule(DateOnly.FromDateTime(DateTime.Now), $"ИТ{user.group_name}");
                 if (daySchedule != null) {
                     var result = MessageBuilder.ShowSchedule(daySchedule);
                     await bot.SendMessage(evt.Chat, result,  ParseMode.Markdown);

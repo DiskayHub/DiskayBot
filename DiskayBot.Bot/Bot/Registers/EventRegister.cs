@@ -1,15 +1,21 @@
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Interfaces;
 
 namespace DiskayBot.Bot.Bot.Registers;
 
 public class EventRegister {
-    private readonly Dictionary<string, EventProcessor>  _eventHandlers;
+    private Dictionary<string, EventProcessor> _events;
 
-    public EventRegister(List<EventProcessor> eventHandlers) {
-        _eventHandlers = eventHandlers.ToDictionary(evt => evt.Name);
+    public EventRegister() {
+        _events = new Dictionary<string, EventProcessor>();
     }
 
-    public EventProcessor? GetEvent(string eventName) {
-        return _eventHandlers.TryGetValue(eventName, out var evt) ? evt : null;
+    public void HandleEvent(string key, EventProcessor evt) {
+        _events[key] = evt;
+    }
+
+    public EventProcessor? GetEvent(string key) {
+        _events.TryGetValue(key, out var evt);
+        return evt;
     }
 }

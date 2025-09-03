@@ -14,7 +14,7 @@ public class CreatingAccountCallback : BotCommand {
     private readonly RedisController _redis;
     private readonly UserService _service;
 
-    public CreatingAccountCallback(RedisController redis, UserService service) : base("createAccount") {
+    public CreatingAccountCallback(string callback, RedisController redis, UserService service) : base(callback) {
         _redis = redis;
         _service = service;
     }

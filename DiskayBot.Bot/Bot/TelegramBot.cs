@@ -1,6 +1,7 @@
 using System.Net;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Bot.CallBacks.Account;
 using DiskayBot.Bot.Bot.CallBacks.Data;
 using DiskayBot.Bot.Bot.Commands;
 using DiskayBot.Bot.Bot.Events;
@@ -34,22 +35,24 @@ public class TelegramBot {
         _redis = redis;
         _userService = userService;
         _scheduleService = scheduleService;
+        
         _eventCreator = new EventCreator();
+        _eventRegister = new EventRegister();
         
         var commands = new List<ICommand>() {
             new StartCommand("/start"),
             new CheckStatusCommand("/check_bot_status", userService, scheduleService),
             new ShowProfileCommand("/show_profile", redis, userService),
-            new FastScheduleCommand(redis, scheduleService)
-            // new RegisterCommand("/create_account", redis, userService, "chooseCourse")
-        };
-
-        var eventHandlers = new List<EventProcessor>() {
-            new SaveGroupHandler("group", redis)
+            new FastScheduleCommand(redis, scheduleService),
+            new RegisterCommand("/create_account", redis, userService, "chooseCourse"),
+            
+            new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
+            new ChooseGroupCallback("chooseGroup", _userService, _redis, _eventRegister, "preCreateAccountOffer"),
+            new PreCreateAccountOffer("preCreateAccountOffer", redis, "createAccount"),
+            new CreatingAccountCallback("createAccount", redis, userService)
         };
         
         _commandRegister = new CommandRegister(commands);
-        _eventRegister = new EventRegister(eventHandlers);
         
         bot = new TelegramBotClient(bot_token);
         bot.OnUpdate += OnUpdate;
@@ -64,6 +67,13 @@ public class TelegramBot {
 
             Console.WriteLine($"Diskay принял сообщение: {evt.GetContent()}");
 
+            var @event = _eventRegister.GetEvent(evt.GetContent());
+
+            if (@event != null) {
+                Console.WriteLine($"НАЙДЕН ОБРАБОТЧИК СОБЫТИЯ: {@event.Name}");
+                await @event.HandleAsync(evt, cts_token.Token);
+            }
+            
             var command = _commandRegister.GetCommand(evt.GetContent());
 
             if (command != null){

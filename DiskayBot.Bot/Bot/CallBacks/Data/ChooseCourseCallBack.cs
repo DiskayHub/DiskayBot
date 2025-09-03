@@ -10,7 +10,7 @@ namespace DiskayBot.Bot.Bot.CallBacks.Data;
 public class ChooseCourseCallBack : BotCommand {
     private readonly string _nextCallback;
     
-    public ChooseCourseCallBack(string nextCallback) : base("chooseCourse") {
+    public ChooseCourseCallBack(string callback, string nextCallback) : base(callback) {
         _nextCallback = nextCallback;
     }
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
@@ -30,7 +30,7 @@ public class ChooseCourseCallBack : BotCommand {
         courses = ["1", "2", "3", "4"];
 
         var keyboard_rows = courses.Select(course =>
-            new[] { InlineKeyboardButton.WithCallbackData(course, $"{_nextCallback}_{course}") }
+            new[] { InlineKeyboardButton.WithCallbackData(course, $"{_nextCallback}={course}") }
         ).ToList();
         
         var keyboard = new InlineKeyboardMarkup(keyboard_rows);

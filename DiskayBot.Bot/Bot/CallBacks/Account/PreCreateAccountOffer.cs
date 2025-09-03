@@ -10,10 +10,12 @@ using BotCommand = DiskayBot.Bot.Abstractions.BotCommand;
 namespace DiskayBot.Bot.Bot.CallBacks.Account;
 
 public class PreCreateAccountOffer : BotCommand {
+    private readonly string _nextCallback;
     private readonly RedisController _redis;
 
-    public PreCreateAccountOffer(RedisController redis) : base("preCreateAccountOffer") {
+    public PreCreateAccountOffer(string callback, RedisController redis, string nextCallback) : base(callback) {
         _redis = redis;
+        _nextCallback = nextCallback;
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
@@ -29,8 +31,8 @@ public class PreCreateAccountOffer : BotCommand {
 
     public InlineKeyboardMarkup GetKeyboard() {
         var keyboardButtons = new[] {
-            new[] { InlineKeyboardButton.WithCallbackData("Да", "createAccount_yes") },
-            new[] { InlineKeyboardButton.WithCallbackData("Нет", "createAccount_no") }
+            new[] { InlineKeyboardButton.WithCallbackData("Да", $"{_nextCallback}=yes") },
+            new[] { InlineKeyboardButton.WithCallbackData("Нет", $"{_nextCallback}=no") }
         };
         var keyboard = new InlineKeyboardMarkup(keyboardButtons);
         return keyboard;

@@ -14,21 +14,43 @@ using BotCommand = DiskayBot.Bot.Abstractions.BotCommand;
 
 namespace DiskayBot.Bot.Bot.CallBacks.Data;
 
-// public class ChooseGroupCallback : BotCommand {
-//     private readonly EventRegister _eventRegister;
-//
-//     public ChooseGroupCallback(EventRegister eventRegister) : base("chooseGroup") {
-//         _eventRegister = eventRegister;
-//     }
-//     
-//     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-//         var callBackEvent = (CallbackQueryUserEvent)evt;
-//         await _eventRegister.ShowGroupsHandler(new ShowGroupsEvent(
-//             bot,
-//             callBackEvent,
-//             short.Parse(callBackEvent.Query),
-//             "Выберите группу",
-//             "group"
-//         ), token);
-//     }
-// }
+public class ChooseGroupCallback : BotCommand {
+    private readonly string _nextCallback;
+    private readonly UserService _userService;
+    public ChooseGroupCallback(string callback, UserService service, RedisController redis, EventRegister eventRegister, string nextNextCallback) : base(callback) {
+        _userService = service;
+        _nextCallback = nextNextCallback;
+        eventRegister.HandleEvent(nextNextCallback, new SaveGroupHandler("Сохранение группы", redis));
+    }
+    
+    public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
+        var callBackEvent = (CallbackQueryUserEvent)evt;
+
+        if (callBackEvent.Query != null) {
+            var course = short.Parse(callBackEvent.Query);
+            var keyboard = await GetInlineKeyboard(course);
+            await bot.EditMessageText(
+                chatId: callBackEvent.Chat,
+                messageId: callBackEvent.MessageId,
+                text: $"*Курс: {course}*\n\nВыберите группу:",
+                parseMode: ParseMode.Markdown,
+                replyMarkup: keyboard
+            );
+        }
+    }
+
+    public async Task<InlineKeyboardMarkup> GetInlineKeyboard(short course) {
+        var allGroups = await _userService.GetAllGroups();
+        
+        allGroups = allGroups.OrderBy(c => {
+            var parts = c.name.Split('-');
+            return int.Parse(parts[1]);
+        }).ToList();
+        
+        var buttons = allGroups.Select(group => {
+            return InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.id}");
+        }).ToList();
+
+        return new InlineKeyboardMarkup(buttons);
+    }
+}

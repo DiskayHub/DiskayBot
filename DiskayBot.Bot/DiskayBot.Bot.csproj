@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Bot\KeyBoard\Scripts\" />
+    <Folder Include="Events\Internal\" />
   </ItemGroup>
 
 </Project>
