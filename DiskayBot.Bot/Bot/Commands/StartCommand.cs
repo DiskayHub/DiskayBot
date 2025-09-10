@@ -10,7 +10,7 @@ namespace DiskayBot.Bot.Bot.Commands;
 public class StartCommand : BotCommand {
     public StartCommand(string name) : base(name) {}
 
-    public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent messageUserEvent) {
-        await bot.SendMessage(messageUserEvent.Chat, MessageBuilder.StartMessage(), ParseMode.Markdown);
+    public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
+        await bot.SendMessage(evt.Chat, MessageBuilder.StartMessage(), ParseMode.Markdown);
     }
 }

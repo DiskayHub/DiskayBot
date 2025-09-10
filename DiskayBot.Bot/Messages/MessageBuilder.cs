@@ -110,10 +110,10 @@ public class MessageBuilder {
                 sb.AppendLine($"Описание: **{item.description}**");
             }
         
-            if (!string.IsNullOrEmpty(item.room_name)) {
+            if (!string.IsNullOrEmpty(item.room_name) && item.subGroups == null) {
                 sb.AppendLine($"Аудитория: {item.room_name}");
             }
-            else {
+            else if (item.subGroups == null) {
                 sb.AppendLine($"Аудитория не указана 🤨");
             }
             
@@ -121,9 +121,8 @@ public class MessageBuilder {
             if (item.subGroups != null && item.subGroups.Count > 0) {
                 foreach (var subGroup in item.subGroups)
                 {
-                    var subInfo = $"   👥 {subGroup.name}";
-                    if (!string.IsNullOrEmpty(subGroup.roomName))
-                    {
+                    var subInfo = $" - `{subGroup.subGroup}` : {subGroup.name}";
+                    if (!string.IsNullOrEmpty(subGroup.roomName)) {
                         subInfo += $" → {subGroup.roomName}";
                     }
                     sb.AppendLine(subInfo);

@@ -1,5 +1,6 @@
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Bot.KeyBoard;
 using DiskayBot.Bot.Interfaces;
@@ -15,12 +16,10 @@ namespace DiskayBot.Bot.Bot.Commands;
 
 public class RegisterCommand : BotCommand {
     private readonly InlineKeyboardMarkup _keyboard;
-    private readonly RedisController _redis;
-    private readonly UserService _userService;
+    private readonly UserController _userController;
 
-    public RegisterCommand(string name, RedisController redis, UserService userService, string callback) : base(name) {
-        _redis = redis;
-        _userService = userService;
+    public RegisterCommand(string name, UserController userController, string callback) : base(name) {
+        _userController = userController;
 
         _keyboard = new InlineKeyboardMarkup(new InlineKeyboardButton[] {
             InlineKeyboardButton.WithCallbackData("Продолжить", callback) 
@@ -28,44 +27,16 @@ public class RegisterCommand : BotCommand {
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient botClient, CancellationToken token, UserEvent evt) {
-        
-        try{
-            var requestRedisUser = await _redis.GetUser(evt.Username);
-
-            if (requestRedisUser == null){
-                var requestRedisSession = await _redis.GetDataHash(evt.UserId.ToString());
-                if (requestRedisSession == null){
-                    var userDataRequest = await _userService.Authorization(evt.UserId);
-
-                    if (userDataRequest == null){
-                        await botClient.SendMessage(
-                            evt.Chat,
-                            MessageBuilder.CreateAccount(),
-                            ParseMode.Markdown,
-                            replyMarkup: _keyboard
-                        );
-                    }
-                    else{
-                        await botClient.SendMessage(evt.Chat, "Кажется вы уже авторизованы", ParseMode.Markdown);
-                        await _redis.SaveUser(evt.Username, userDataRequest);
-                    }
-                }
-                else {
-                    await botClient.SendMessage(evt.Chat, "Вы не завершили сессию. \nЗакончитете её, либо дождитесь таймаута.", 
-                        ParseMode.Markdown);
-                }
-            }
-            else{
-                await botClient.SendMessage(evt.Chat, "Кажется вы уже авторизованы", ParseMode.Markdown);
-            }
+        if (!await _userController.IsAuthenticated(evt.UserId)) {
+            await botClient.SendMessage(
+                evt.Chat,
+                MessageBuilder.CreateAccount(),
+                ParseMode.Markdown,
+                replyMarkup: _keyboard
+            );
         }
-
-        catch (HttpRequestException e){
-            throw new ConnectionRefuseExeption("Ошибка при подключении", _userService.Name);
-        }
-        
-        catch (Exception e){
-            throw new Exception(e.Message);
+        else{
+            await botClient.SendMessage(evt.Chat, "Кажется вы уже авторизованы", ParseMode.Markdown);
         }
     }
 }

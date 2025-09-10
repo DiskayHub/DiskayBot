@@ -4,6 +4,7 @@ using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.CallBacks.Account;
 using DiskayBot.Bot.Bot.CallBacks.Data;
 using DiskayBot.Bot.Bot.Commands;
+using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Events;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Bot.KeyBoard;
@@ -38,13 +39,15 @@ public class TelegramBot {
         
         _eventCreator = new EventCreator();
         _eventRegister = new EventRegister();
+
+        var userController = new UserController(redis, userService);
         
         var commands = new List<ICommand>() {
             new StartCommand("/start"),
             new CheckStatusCommand("/check_bot_status", userService, scheduleService),
-            new ShowProfileCommand("/show_profile", redis, userService),
+            new ShowProfileCommand("/show_profile", userController),
             new FastScheduleCommand(redis, scheduleService),
-            new RegisterCommand("/create_account", redis, userService, "chooseCourse"),
+            new RegisterCommand("/create_account", userController, "chooseCourse"),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
             new ChooseGroupCallback("chooseGroup", _userService, _redis, _eventRegister, "preCreateAccountOffer"),
@@ -87,10 +90,10 @@ public class TelegramBot {
 
     public async Task Start() {
         try{
-            var bot_info = await bot.GetMe();
+            var botInfo = await bot.GetMe();
             
             Console.WriteLine(
-                $"@{bot_info.Username} вылетел в космос и готов выполнять работу, для завершения нажмите enter");
+                $"@{botInfo.Username} вылетел в космос и готов выполнять работу, для завершения нажмите enter");
             Console.ReadLine();
         }
         catch (Exception ex){

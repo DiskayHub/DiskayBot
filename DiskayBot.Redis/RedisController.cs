@@ -12,10 +12,11 @@ public class RedisController : IRedisController {
         _redis = redis;
     }
 
-    public async Task SaveUser(string username, UserData data) {
+    public async Task SaveUser(string key, UserData data, TimeSpan timeout) {
         try{
             var jsonString = JsonSerializer.Serialize(data);
-            await _redis.StringSetAsync(username, jsonString);
+            await _redis.StringSetAsync(key, jsonString);
+            await _redis.KeyExpireAsync(key, timeout);
         }
         catch (Exception e){
             Console.WriteLine(e.Message);
@@ -32,6 +33,7 @@ public class RedisController : IRedisController {
                 var userData = JsonSerializer.Deserialize<UserData>(data);
                 return userData;
             }
+            Console.WriteLine("[REDIS]: ПОЛЬЗОВАТЕЛЯ НЕТ В КЕШЕ");
             
             return null;
         }

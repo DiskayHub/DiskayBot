@@ -40,7 +40,7 @@ public class ChooseGroupCallback : BotCommand {
     }
 
     public async Task<InlineKeyboardMarkup> GetInlineKeyboard(short course) {
-        var allGroups = await _userService.GetAllGroups();
+        var allGroups = await _userService.GetCourseGroups(course);
         
         allGroups = allGroups.OrderBy(c => {
             var parts = c.name.Split('-');

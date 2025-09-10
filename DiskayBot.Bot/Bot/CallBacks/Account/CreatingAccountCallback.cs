@@ -29,9 +29,9 @@ public class CreatingAccountCallback : BotCommand {
                 var cash = await _redis.GetDataHash(evt.Chat.Id.ToString());
             
                 if (cash != null){
-                    var GroupId = cash.FirstOrDefault(x => x.Name.ToString() == "group_id").Value;
+                    var groupId = cash.FirstOrDefault(x => x.Name.ToString() == "group_id").Value;
                 
-                    var request = await _service.Registration(evt.UserId, evt.Username, GroupId.ToString());
+                    var request = await _service.Registration(evt.UserId, evt.Username, groupId.ToString());
                     if (request == HttpStatusCode.OK){
                         await bot.SendMessage(evt.Chat, $"Добро пожаловать, {evt.Username}!", ParseMode.Markdown);
                         await _redis.DeleteData(evt.Chat.Id.ToString());
