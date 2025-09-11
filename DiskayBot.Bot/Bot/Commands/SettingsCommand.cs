@@ -1,4 +1,7 @@
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Bot.Controllers;
+using DiskayBot.Bot.Bot.Exeptions;
+using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
 using StackExchange.Redis;
 using Telegram.Bot;
@@ -6,13 +9,16 @@ using Telegram.Bot;
 namespace DiskayBot.Bot.Bot.Commands;
 
 public class SettingsCommand : BotCommand {
-    private readonly RedisController  _redis;
+    private readonly UserController _userController;
     
-    public SettingsCommand(string name) : base(name) {
-        
+    public SettingsCommand(string name, UserController userController) : base(name) {
+        _userController = userController;
     }
 
-    public override Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-        throw new NotImplementedException();
+    public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
+        if (await _userController.IsAuthenticated(evt.UserId)) {
+            
+        }
+        throw new NotAuthorizatedExeption();
     }
 }

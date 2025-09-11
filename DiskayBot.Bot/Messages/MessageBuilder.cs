@@ -74,7 +74,7 @@ public class MessageBuilder {
     }
 
     public static string RegisterOffer() {
-        return "Вы уверены? \nПосле согласия вы попадёте в память Diskay 💫\n \n(Ваш ник и ваша группа)";
+        return "Вы уверены? \nПосле согласия вы попадёте в память *Diskay* 💫\n \n(**Ваш ник и ваша группа**)";
     }
 
     public static string AdditionalInfoOffer() {

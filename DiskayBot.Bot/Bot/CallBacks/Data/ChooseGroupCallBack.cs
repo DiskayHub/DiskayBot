@@ -47,10 +47,15 @@ public class ChooseGroupCallback : BotCommand {
             return int.Parse(parts[1]);
         }).ToList();
         
-        var buttons = allGroups.Select(group => {
-            return InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.id}");
-        }).ToList();
+        var buttons = allGroups.Select(group => 
+            InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.id}")
+        ).ToArray();
+        
+        var keyboard = new InlineKeyboardMarkup(new[] {
+            buttons, 
+            new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", "chooseCourse") }
+        });
 
-        return new InlineKeyboardMarkup(buttons);
+        return keyboard;
     }
 }

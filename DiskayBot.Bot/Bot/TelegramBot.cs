@@ -46,7 +46,7 @@ public class TelegramBot {
             new StartCommand("/start"),
             new CheckStatusCommand("/check_bot_status", userService, scheduleService),
             new ShowProfileCommand("/show_profile", userController),
-            new FastScheduleCommand(redis, scheduleService),
+            new FastScheduleCommand(userController, scheduleService),
             new RegisterCommand("/create_account", userController, "chooseCourse"),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
@@ -62,27 +62,31 @@ public class TelegramBot {
     }
 
     protected async Task OnUpdate(Update update) {
-        try{
-            cts_token.CancelAfter(2000);
-            Console.Write("\n- - - ОБРАБОТКА ЗАПРОСА - - -\n");
+        cts_token.CancelAfter(2000);
+        Console.Write("\n- - - ОБРАБОТКА ЗАПРОСА - - -\n");
 
-            var evt = _eventCreator.Create(update);
+        var evt = _eventCreator.Create(update);
 
-            Console.WriteLine($"Diskay принял сообщение: {evt.GetContent()}");
-
+        Console.WriteLine($"Diskay принял сообщение: {evt.GetContent()}");
+        
+        try {
             var @event = _eventRegister.GetEvent(evt.GetContent());
 
             if (@event != null) {
                 Console.WriteLine($"НАЙДЕН ОБРАБОТЧИК СОБЫТИЯ: {@event.Name}");
                 await @event.HandleAsync(evt, cts_token.Token);
             }
-            
+
             var command = _commandRegister.GetCommand(evt.GetContent());
 
-            if (command != null){
+            if (command != null) {
                 await command.ExecuteAsync(bot, cts_token.Token, evt);
             }
         }
+        catch (NotAuthorizatedExeption e) {
+            await bot.SendMessage(evt.Chat, MessageBuilder.NotRegistered(), ParseMode.Markdown);
+        }
+        
         catch (Exception e) {
             
         }

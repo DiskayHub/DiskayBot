@@ -31,8 +31,8 @@ public class PreCreateAccountOffer : BotCommand {
 
     public InlineKeyboardMarkup GetKeyboard() {
         var keyboardButtons = new[] {
-            new[] { InlineKeyboardButton.WithCallbackData("Да", $"{_nextCallback}=yes") },
-            new[] { InlineKeyboardButton.WithCallbackData("Нет", $"{_nextCallback}=no") }
+            InlineKeyboardButton.WithCallbackData("Да", $"{_nextCallback}=yes"),
+            InlineKeyboardButton.WithCallbackData("Нет", $"{_nextCallback}=no") 
         };
         var keyboard = new InlineKeyboardMarkup(keyboardButtons);
         return keyboard;

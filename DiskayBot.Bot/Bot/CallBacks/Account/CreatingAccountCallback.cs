@@ -33,7 +33,7 @@ public class CreatingAccountCallback : BotCommand {
                 
                     var request = await _service.Registration(evt.UserId, evt.Username, groupId.ToString());
                     if (request == HttpStatusCode.OK){
-                        await bot.SendMessage(evt.Chat, $"Добро пожаловать, {evt.Username}!", ParseMode.Markdown);
+                        await bot.SendMessage(evt.Chat, $"Добро пожаловать, *{evt.Username}*!", ParseMode.Markdown);
                         await _redis.DeleteData(evt.Chat.Id.ToString());
                     }
                     else {
