@@ -22,7 +22,8 @@ public class ShowProfileCommand : BotCommand {
             string result = MessageBuilder.ShowProfile(user);
             await bot.SendMessage(evt.Chat, result, ParseMode.Markdown);
         }
-
-        throw new NotAuthorizatedExeption();
+        else {
+            throw new NotAuthorizatedExeption();   
+        }
     }
 }

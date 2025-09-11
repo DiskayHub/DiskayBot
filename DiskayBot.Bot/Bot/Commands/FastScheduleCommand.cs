@@ -33,7 +33,8 @@ public class FastScheduleCommand : BotCommand {
                 await bot.SendMessage(evt.Chat, "Сегодня пар нет :)",  ParseMode.Markdown);
             }
         }
-
-        throw new NotAuthorizatedExeption();
+        else {
+            throw new NotAuthorizatedExeption();   
+        }
     }
 }

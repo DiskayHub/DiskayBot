@@ -19,6 +19,8 @@ public class SettingsCommand : BotCommand {
         if (await _userController.IsAuthenticated(evt.UserId)) {
             
         }
-        throw new NotAuthorizatedExeption();
+        else {
+            throw new NotAuthorizatedExeption();   
+        }
     }
 }
