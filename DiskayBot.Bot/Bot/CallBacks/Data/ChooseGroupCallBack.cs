@@ -1,10 +1,10 @@
 using System.Data;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
-using DiskayBot.Bot.Bot.Events;
 using DiskayBot.Bot.Bot.Registers;
 using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Events.Data;
+using DiskayBot.Bot.Events.Internal;
 using DiskayBot.Redis;
 using Telegram.Bot;
 using Telegram.Bot.Types;

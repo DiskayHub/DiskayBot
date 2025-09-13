@@ -1,12 +1,8 @@
 using DiskayBot.Bot.Abstractions;
-using DiskayBot.Bot.Events;
-using DiskayBot.Bot.Events.Data;
-using DiskayBot.Bot.Interfaces;
 using DiskayBot.Redis;
 using StackExchange.Redis;
-using Telegram.Bot;
 
-namespace DiskayBot.Bot.Bot.Events;
+namespace DiskayBot.Bot.Events.Internal;
 
 public class SaveGroupHandler : EventProcessor {
     private readonly RedisController _redis;

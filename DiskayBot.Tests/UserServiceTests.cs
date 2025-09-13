@@ -27,7 +27,7 @@ public class UserServiceTests {
             });
         
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new UserService(httpClient);
+        var service = new UserService(httpClient, "http://localhost:5014", "DiskayMemory");
 
         var result = await service.Registration(100, "user", "123");
         
@@ -50,7 +50,7 @@ public class UserServiceTests {
             });
         
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new UserService(httpClient);
+        var service = new UserService(httpClient, "http://localhost:5014", "DiskayMemory");
         
         var result = await service.Registration(100, "user", "123");
     }
@@ -69,7 +69,7 @@ public class UserServiceTests {
             .ThrowsAsync(new HttpRequestException("Simulated network failure")
             );
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new UserService(httpClient);
+        var service = new UserService(httpClient, "http://localhost:5014", "DiskayMemory");
         
         var result = await service.Registration(100, "user", "123");
         

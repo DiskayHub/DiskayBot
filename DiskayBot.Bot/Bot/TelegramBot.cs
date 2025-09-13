@@ -5,7 +5,6 @@ using DiskayBot.Bot.Bot.CallBacks.Account;
 using DiskayBot.Bot.Bot.CallBacks.Data;
 using DiskayBot.Bot.Bot.Commands;
 using DiskayBot.Bot.Bot.Controllers;
-using DiskayBot.Bot.Bot.Events;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Bot.KeyBoard;
 using DiskayBot.Bot.Bot.Registers;
