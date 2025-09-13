@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Groups;
 using DiskayBot.API.Contracts.Service;
+using DiskayBot.API.Contracts.Users.UpdateUser;
 
 namespace DiskayBot.API.Services;
 
@@ -131,6 +132,22 @@ public class UserService{
         }
         catch (Exception ex){
             throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task<HttpStatusCode> UpdateUser(UpdateUserRequest requestBody) {
+        try {
+            var jsonString = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            var response = await _client.PostAsync($"{_baseUrl}/api/TelegramUsers/UpdateUser", content);
+
+            if (response.IsSuccessStatusCode) {
+                return HttpStatusCode.OK;
+            }
+            return HttpStatusCode.InternalServerError;
+        }
+        catch (HttpRequestException ex) {
+            throw new HttpRequestException(ex.Message);
         }
     }
 }

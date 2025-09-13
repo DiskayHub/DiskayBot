@@ -19,7 +19,7 @@ public class UserController {
         if (userCache == null) {
             var userDataBase = await _userService.Authorization(userId);
             if (userDataBase != null) {
-                await _redis.SaveUser(userDataBase.username, userDataBase, TimeSpan.FromMinutes(30));
+                await _redis.SaveUser(userId.ToString(), userDataBase, TimeSpan.FromMinutes(30));
                 return userDataBase;
             }
         }

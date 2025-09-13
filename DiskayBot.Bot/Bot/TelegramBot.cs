@@ -46,13 +46,19 @@ public class TelegramBot {
             new StartCommand("/start"),
             new CheckStatusCommand("/check_bot_status", userService, scheduleService),
             new ShowProfileCommand("/show_profile", userController),
-            new FastScheduleCommand(userController, scheduleService),
+            new FastScheduleCommand("/disky", userController, scheduleService),
             new RegisterCommand("/create_account", userController, "chooseCourse"),
+            new SettingsCommand("/settings", userController),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
             new ChooseGroupCallback("chooseGroup", _userService, _redis, _eventRegister, "preCreateAccountOffer"),
             new PreCreateAccountOffer("preCreateAccountOffer", redis, "createAccount"),
-            new CreatingAccountCallback("createAccount", redis, userService)
+            new CreatingAccountCallback("createAccount", redis, userService),
+            
+            new ChangeProfileDataCallback("changeProfileData", userController),
+            new ChooseCourseCallBack("changeCourse", "changeGroup"),
+            new ChooseGroupCallback("changeGroup", _userService, _redis, _eventRegister, "changingGroup"),
+            new ChangingGroupCallback("changingGroup", redis, userController, userService)
         };
         
         _commandRegister = new CommandRegister(commands);
@@ -88,7 +94,7 @@ public class TelegramBot {
         }
         
         catch (Exception e) {
-            
+            await bot.SendMessage(evt.Chat, "Неизвестная ошибка", ParseMode.Markdown);
         }
     }
 

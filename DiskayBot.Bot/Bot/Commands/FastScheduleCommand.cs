@@ -15,7 +15,7 @@ public class FastScheduleCommand : BotCommand {
     private readonly UserController _userController;
     private readonly ScheduleService _schedule;
     
-    public FastScheduleCommand(UserController userController, ScheduleService schedule) : base("/fast_schedule") {
+    public FastScheduleCommand(string name, UserController userController, ScheduleService schedule) : base(name) {
         _userController = userController;
         _schedule = schedule;
     }

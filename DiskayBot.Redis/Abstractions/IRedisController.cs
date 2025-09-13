@@ -5,7 +5,7 @@ namespace DiskayBot.Redis.Abstractions;
 
 public interface IRedisController {
     public Task SaveUser(string key, UserData user, TimeSpan timeout);
-    public Task<UserData?> GetUser(string id);
+    public Task<UserData?> GetUser(string key);
     public Task DeleteUser(string id);
 
     public Task SaveDataHash(string key, HashEntry[] hash, TimeSpan timeout);

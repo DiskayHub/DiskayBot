@@ -23,15 +23,19 @@ public class RedisController : IRedisController {
         }
     }
 
-    public async Task<UserData?> GetUser(string id) {
+    public async Task<UserData?> GetUser(string key) {
         try {
-            Console.WriteLine("[REDIS]: ПЫТАЮСЬ ПОЛУЧИТЬ ПОЛЬЗОВАТЕЛЯ - " + id);
+            Console.WriteLine("[REDIS]: ПЫТАЮСЬ ПОЛУЧИТЬ ПОЛЬЗОВАТЕЛЯ - " + key);
             
-            var data = await _redis.StringGetAsync(id);
+            var data = await _redis.StringGetAsync(key);
             
             if (!data.IsNullOrEmpty){
                 var userData = JsonSerializer.Deserialize<UserData>(data);
-                return userData;
+                if (userData != null) {
+                    Console.WriteLine($"[REDIS]: ПОЛУЧЕН ПОЛЬЗОВАТЕЛЬ: {userData.username}");
+                    return userData;   
+                }
+                return null;
             }
             Console.WriteLine("[REDIS]: ПОЛЬЗОВАТЕЛЯ НЕТ В КЕШЕ");
             
@@ -52,9 +56,10 @@ public class RedisController : IRedisController {
     }
 
     public async Task SaveDataHash(string key, HashEntry[] hash, TimeSpan timeout) {
-        try{
-            await _redis.HashSetAsync(key, hash);
-            await _redis.KeyExpireAsync(key, timeout);
+        try {
+            var datakey = $"{key}:process";
+            await _redis.HashSetAsync(datakey, hash);
+            await _redis.KeyExpireAsync(datakey, timeout);
             Console.WriteLine("[REDIS]: СОХРАНИЛ ИНФОРМАЦИЮ - " + key);
         }
         catch (Exception e){
@@ -64,10 +69,11 @@ public class RedisController : IRedisController {
 
     public async Task<HashEntry[]?> GetDataHash(string key) {
         try {
-            var data = await _redis.HashGetAllAsync(key);
+            var datakey = $"{key}:process";
+            var data = await _redis.HashGetAllAsync(datakey);
 
             if (data.Length != 0){
-                var ttl = await _redis.KeyTimeToLiveAsync(key);
+                var ttl = await _redis.KeyTimeToLiveAsync(datakey);
                 Console.WriteLine($"TTL: {ttl?.TotalSeconds}");
                 return data;
             }
@@ -81,8 +87,9 @@ public class RedisController : IRedisController {
     }
 
     public async Task DeleteData(string key) {
+        var datakey = $"{key}:process";
         try {
-            await _redis.KeyDeleteAsync(key);
+            await _redis.KeyDeleteAsync(datakey);
         }
         catch (Exception e){
             Console.WriteLine(e.GetType());

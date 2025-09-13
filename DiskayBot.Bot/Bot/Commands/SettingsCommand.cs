@@ -5,6 +5,7 @@ using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
 using StackExchange.Redis;
 using Telegram.Bot;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DiskayBot.Bot.Bot.Commands;
 
@@ -17,10 +18,21 @@ public class SettingsCommand : BotCommand {
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
         if (await _userController.IsAuthenticated(evt.UserId)) {
-            
+            await bot.SendMessage(
+                evt.Chat,
+                "Настройки",
+                replyMarkup: GetInlineKeyboard()
+            );
         }
         else {
             throw new NotAuthorizatedExeption();   
         }
+    }
+
+    public InlineKeyboardMarkup GetInlineKeyboard() {
+        var buttons = new[] {
+            InlineKeyboardButton.WithCallbackData("Изменить данные о профиле", "changeProfileData")
+        };
+        return new InlineKeyboardMarkup(buttons);
     }
 }
