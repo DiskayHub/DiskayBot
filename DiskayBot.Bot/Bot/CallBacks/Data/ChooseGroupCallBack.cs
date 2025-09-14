@@ -53,7 +53,7 @@ public class ChooseGroupCallback : BotCommand {
         
         var keyboard = new InlineKeyboardMarkup(new[] {
             buttons, 
-            new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", "chooseCourse") }
+            new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", "changeCourse") }
         });
 
         return keyboard;
