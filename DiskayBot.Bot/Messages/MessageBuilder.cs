@@ -88,6 +88,11 @@ public class MessageBuilder {
     public static string ShowSchedule(DayScheduleResponse daySchedule)
     {
         var sb = new StringBuilder();
+        
+        if (daySchedule.date != DateOnly.FromDateTime(DateTime.Now)) {
+            sb.AppendLine("На сегодня пар нет, однако мне удалось найти ближайшее расписание:");
+            sb.AppendLine();
+        }
     
         sb.AppendLine($"📅 *{daySchedule.date:dd.MM.yyyy}* | 🫡 *{daySchedule.mainGroup}*");
         sb.AppendLine();

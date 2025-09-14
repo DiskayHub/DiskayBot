@@ -24,13 +24,13 @@ public class FastScheduleCommand : BotCommand {
         var user = await _userController.GetUserData(evt.UserId);
 
         if (user != null) {
-            var daySchedule = await _schedule.GetDaySchedule(DateOnly.FromDateTime(DateTime.Now), $"ИТ{user.group_name}");
+            var daySchedule = await _schedule.GetActualSchedule($"ИТ{user.group_name}");
             if (daySchedule != null) {
                 var result = MessageBuilder.ShowSchedule(daySchedule);
                 await bot.SendMessage(evt.Chat, result,  ParseMode.Markdown);
             }
             else {
-                await bot.SendMessage(evt.Chat, "Сегодня пар нет :)",  ParseMode.Markdown);
+                await bot.SendMessage(evt.Chat, "Не получилось отправить ближайшее расписание",  ParseMode.Markdown);
             }
         }
         else {

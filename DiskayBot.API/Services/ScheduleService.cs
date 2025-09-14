@@ -15,6 +15,26 @@ public class ScheduleService {
         Name = name;
     }
 
+    public async Task<DayScheduleResponse?> GetActualSchedule(string groupName) {
+        try {
+            var response =
+                await _client.GetAsync($"{_baseUrl}/api/DaySchedule/GetActualSchedule?group_name={groupName}");
+
+            if (response.IsSuccessStatusCode) {
+                var content = await response.Content.ReadAsStringAsync();
+                var scheduleDay = JsonConvert.DeserializeObject<DayScheduleResponse>(content);
+
+                if (scheduleDay != null) return scheduleDay;
+                return null;
+            }
+
+            return null;
+        }
+        catch (Exception ex) {
+            return null;
+        }
+    }
+
     public async Task<DayScheduleResponse?> GetDaySchedule(DateOnly date, string groupName) {
         try {
             var requestBody = DayScheduleRequest.Create(date, groupName);
