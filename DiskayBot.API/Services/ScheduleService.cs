@@ -1,5 +1,6 @@
 using DiskayBot.API.Contracts.Schedule;
 using DiskayBot.API.Contracts.Service;
+using DiskayBot.API.Modules;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -15,75 +16,31 @@ public class ScheduleService {
         Name = name;
     }
 
-    public async Task<DayScheduleResponse?> GetActualSchedule(string groupName) {
+    public async Task<DaySchedule?> GetActualSchedule(string groupName) {
         try {
-            var response =
-                await _client.GetAsync($"{_baseUrl}/api/DaySchedule/GetActualSchedule?group_name={groupName}");
+            var actualPeriod = TimeHelper.GetActualWeekPeriod();
+            var requestBody = DayScheduleRequest.Create(
+                dayStart: actualPeriod.Start.ToString("yyyy-MM-dd"),
+                dayEnd: actualPeriod.End.ToString("yyyy-MM-dd"),
+                groupName
+            );
 
-            if (response.IsSuccessStatusCode) {
-                var content = await response.Content.ReadAsStringAsync();
-                var scheduleDay = JsonConvert.DeserializeObject<DayScheduleResponse>(content);
+            if (requestBody != null) {
+                var response = await _client.PostAsync($"{_baseUrl}/schedule25.php", requestBody.GetStringContent());
+                if (response.IsSuccessStatusCode) {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var responseObject = JsonSerializer.Deserialize<List<ApiItem>>(content);
 
-                if (scheduleDay != null) return scheduleDay;
-                return null;
-            }
-
-            return null;
-        }
-        catch (Exception ex) {
-            return null;
-        }
-    }
-
-    public async Task<DayScheduleResponse?> GetDaySchedule(DateOnly date, string groupName) {
-        try {
-            var requestBody = DayScheduleRequest.Create(date, groupName);
-            
-            Console.WriteLine("Получаю расписание");
-            
-            var response =
-                await _client.GetAsync(
-                    $"{_baseUrl}/api/DaySchedule/GetDayByDate?date={requestBody.Date}&group_name={requestBody.GroupName}");
-
-            if (response.IsSuccessStatusCode) {
-                Console.WriteLine("Расписание получено");
-                var content = await response.Content.ReadAsStringAsync();
-                var scheduleDay = JsonConvert.DeserializeObject<DayScheduleResponse>(content);
-
-                if (scheduleDay != null) return scheduleDay;
-                return null;
-            }
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound) {
-                return null;
-            }
-            throw new Exception("Could not get day schedule");
-        }
-        
-        catch (HttpRequestException ex) {
-            throw new Exception("Could not get day schedule", ex);
-        }
-    }
-
-    public async Task<PingResponse> PingService() {
-        try{
-            var response = await _client.GetAsync($"{_baseUrl}/api/Service/Ping");
-
-            if (response.IsSuccessStatusCode){
-                var content = await response.Content.ReadAsStringAsync();
-                var responseObject = JsonSerializer.Deserialize<PingResponse>(content);
-                if (responseObject != null){
-                    return responseObject;
+                    if (responseObject != null) {
+                        var days = ScheduleFormatter.FormatPeriod(responseObject, groupName);
+                        return days[0];
+                    }
                 }
             }
-
-            throw new Exception(response.ReasonPhrase);
+            return null;
         }
-        catch (HttpRequestException){
-            return PingResponse.CreateDefault(Name);
-        }
-
-        catch (Exception ex){
-            throw new Exception(ex.Message);
+        catch {
+            throw new Exception("Could not get actual schedule");
         }
     }
 }

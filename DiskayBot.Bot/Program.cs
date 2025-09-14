@@ -32,13 +32,13 @@ var host = Host.CreateDefaultBuilder(args)
             )
         );
         
-        // DiskayCollector
+        // CollegeApi
 
         services.AddSingleton<ScheduleService>(sp =>
             new ScheduleService(
                 sp.GetRequiredService<HttpClient>(),
-                "http://localhost:5171", 
-                "DiskayCollector"
+                "https://portal.it-college.ru", 
+                "College"
             )
         );
 

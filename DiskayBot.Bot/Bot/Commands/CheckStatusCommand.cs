@@ -17,7 +17,6 @@ public class CheckStatusCommand : BotCommand {
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
         var userService = await _userService.PingService();
-        var scheduleService = await _scheduleService.PingService();
-        await bot.SendMessage(evt.Chat, MessageBuilder.CheckBotStatus([userService, scheduleService]), ParseMode.Markdown);
+        await bot.SendMessage(evt.Chat, MessageBuilder.CheckBotStatus([userService]), ParseMode.Markdown);
     }
 }

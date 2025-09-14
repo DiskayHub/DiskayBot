@@ -85,12 +85,12 @@ public class MessageBuilder {
                $"Как тебе?";
     }
 
-    public static string ShowSchedule(DayScheduleResponse daySchedule)
+    public static string ShowSchedule(DaySchedule daySchedule)
     {
         var sb = new StringBuilder();
         
         if (daySchedule.date != DateOnly.FromDateTime(DateTime.Now)) {
-            sb.AppendLine("На сегодня пар нет, однако мне удалось найти ближайшее расписание:");
+            sb.AppendLine("Сегодня нет пар :)\nНо вот ближайшее расписание:");
             sb.AppendLine();
         }
     
