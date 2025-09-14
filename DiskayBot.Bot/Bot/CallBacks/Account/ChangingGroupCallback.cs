@@ -29,13 +29,12 @@ public class ChangingGroupCallback : BotCommand {
             if (data != null) {
                 var groupId = data.FirstOrDefault(x => x.Name.ToString() == "group_id").Value;
                 var requestBody = new UpdateUserRequest(
-                    user_id: evt.UserId,
                     group_id: Guid.Parse(groupId),
                     eng_group: null,
                     sub_group: null,
                     prof_group: null
                 );
-                var request = await _userService.UpdateUser(requestBody);
+                var request = await _userService.UpdateUser(evt.UserId, requestBody);
                 if (request == HttpStatusCode.OK) {
                     await bot.EditMessageText(
                         evt.Chat,

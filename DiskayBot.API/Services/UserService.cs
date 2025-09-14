@@ -24,7 +24,7 @@ public class UserService{
 
     public async Task<PingResponse?> PingService() {
         try{
-            var response = await _client.GetAsync($"{_baseUrl}/api/Service/Ping");
+            var response = await _client.GetAsync($"{_baseUrl}/api/service/ping");
 
             if (response.IsSuccessStatusCode){
                 var content = await response.Content.ReadAsStringAsync();
@@ -44,13 +44,13 @@ public class UserService{
 
     public async Task<HttpStatusCode> Registration(long userId, string userName, string groupId) {
         try {
-            string json_content = JsonSerializer.Serialize(new {
+            string jsonContent = JsonSerializer.Serialize(new {
                 user_id = userId,
                 username = userName,
                 group_id = groupId
             });
-            var content = new StringContent(json_content, Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync($"{_baseUrl}/api/UserManager/AddTelegramUser", content);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            var response = await _client.PostAsync($"{_baseUrl}/api/diskay/telegram_user", content);
             
             Console.WriteLine(response.RequestMessage);
             if (response.IsSuccessStatusCode) {
@@ -67,12 +67,12 @@ public class UserService{
 
     public async Task<UserData?> Authorization(long userId) {
         try{
-            string json_content = JsonSerializer.Serialize(new {
+            string jsonContent = JsonSerializer.Serialize(new {
                 user_id = userId
             });
-            var content = new StringContent(json_content, Encoding.UTF8, "application/json");
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
             HttpResponseMessage response =
-                await _client.GetAsync($"{_baseUrl}/api/TelegramUsers/GetById?user_id={userId}");
+                await _client.GetAsync($"{_baseUrl}/api/telegram_users/{userId}");
 
             if (response.IsSuccessStatusCode){
                 var responseBody = await response.Content.ReadAsStringAsync();
@@ -97,10 +97,10 @@ public class UserService{
 
     public async Task<List<GroupResponse>?> GetAllGroups() {
         try {
-            HttpResponseMessage response = await _client.GetAsync($"{_baseUrl}/api/Groups/GetAll");
+            HttpResponseMessage response = await _client.GetAsync($"{_baseUrl}/api/groups");
             if (response.IsSuccessStatusCode) {
-                string ResponseBody = await response.Content.ReadAsStringAsync();
-                var groups = JsonSerializer.Deserialize<List<GroupResponse>>(ResponseBody);
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var groups = JsonSerializer.Deserialize<List<GroupResponse>>(responseBody);
                 return groups;
             }
             throw new HttpRequestException();
@@ -118,10 +118,10 @@ public class UserService{
     public async Task<List<GroupResponse>?> GetCourseGroups(int course) {
         try{
             HttpResponseMessage response =
-                await _client.GetAsync($"{_baseUrl}/api/Groups/GetByCourse?course={course}");
+                await _client.GetAsync($"{_baseUrl}/api/groups/{course}");
             if (response.IsSuccessStatusCode){
-                string ResponseBody = await response.Content.ReadAsStringAsync();
-                var groups = JsonSerializer.Deserialize<List<GroupResponse>>(ResponseBody);
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var groups = JsonSerializer.Deserialize<List<GroupResponse>>(responseBody);
                 return groups;
             }
 
@@ -135,11 +135,11 @@ public class UserService{
         }
     }
 
-    public async Task<HttpStatusCode> UpdateUser(UpdateUserRequest requestBody) {
+    public async Task<HttpStatusCode> UpdateUser(long userId, UpdateUserRequest requestBody) {
         try {
             var jsonString = JsonSerializer.Serialize(requestBody);
             var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync($"{_baseUrl}/api/TelegramUsers/UpdateUser", content);
+            var response = await _client.PutAsync($"{_baseUrl}/api/telegram_users/{userId}", content);
 
             if (response.IsSuccessStatusCode) {
                 return HttpStatusCode.OK;

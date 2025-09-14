@@ -50,13 +50,13 @@ public class TelegramBot {
             new SettingsCommand("/settings", userController),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
-            new ChooseGroupCallback("chooseGroup", _userService, _redis, _eventRegister, "preCreateAccountOffer"),
+            new ChooseGroupCallback("chooseGroup", _userService, _redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),
             new PreCreateAccountOffer("preCreateAccountOffer", redis, "createAccount"),
             new CreatingAccountCallback("createAccount", redis, userService),
             
             new ChangeProfileDataCallback("changeProfileData", userController),
             new ChooseCourseCallBack("changeCourse", "changeGroup"),
-            new ChooseGroupCallback("changeGroup", _userService, _redis, _eventRegister, "changingGroup"),
+            new ChooseGroupCallback("changeGroup", _userService, _redis, _eventRegister, "changingGroup", "changeCourse"),
             new ChangingGroupCallback("changingGroup", redis, userController, userService)
         };
         

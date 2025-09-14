@@ -16,10 +16,12 @@ namespace DiskayBot.Bot.Bot.CallBacks.Data;
 
 public class ChooseGroupCallback : BotCommand {
     private readonly string _nextCallback;
+    private readonly string _backCourse;
     private readonly UserService _userService;
-    public ChooseGroupCallback(string callback, UserService service, RedisController redis, EventRegister eventRegister, string nextNextCallback) : base(callback) {
+    public ChooseGroupCallback(string callback, UserService service, RedisController redis, EventRegister eventRegister, string nextNextCallback, string backCourse) : base(callback) {
         _userService = service;
         _nextCallback = nextNextCallback;
+        _backCourse = backCourse;
         eventRegister.HandleEvent(nextNextCallback, new SaveGroupHandler("Сохранение группы", redis));
     }
     
@@ -53,7 +55,7 @@ public class ChooseGroupCallback : BotCommand {
         
         var keyboard = new InlineKeyboardMarkup(new[] {
             buttons, 
-            new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", "changeCourse") }
+            new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", _backCourse) }
         });
 
         return keyboard;
