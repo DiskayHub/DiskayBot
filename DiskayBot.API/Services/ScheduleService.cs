@@ -33,6 +33,10 @@ public class ScheduleService {
 
                     if (responseObject != null) {
                         var days = ScheduleFormatter.FormatPeriod(responseObject, groupName);
+                        if (days[0].date == DateOnly.FromDateTime(DateTime.Now) &&
+                            days[0].items[days[0].items.Count - 1].endTime < TimeOnly.FromDateTime(DateTime.Now)) {
+                            return days[1];
+                        }
                         return days[0];
                     }
                 }

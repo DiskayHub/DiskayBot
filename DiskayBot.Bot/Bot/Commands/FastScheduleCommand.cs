@@ -27,7 +27,7 @@ public class FastScheduleCommand : BotCommand {
             var daySchedule = await _schedule.GetActualSchedule($"ИТ{user.group_name}");
             if (daySchedule != null) {
                 var result = MessageBuilder.ShowSchedule(daySchedule);
-                await bot.SendMessage(evt.Chat, result,  ParseMode.Markdown);
+                await bot.SendMessage(evt.Chat, result,  ParseMode.Html);
             }
             else {
                 await bot.SendMessage(evt.Chat, "Не получилось отправить ближайшее расписание",  ParseMode.Markdown);

@@ -21,14 +21,13 @@ public class MessageBuilder {
     public static string CheckBotStatus(List<PingResponse?> response) {
         string message = "Статус сервисов *Diskay*\n\n";
         
-        string Emoji(string status) => status switch
-        {
+        string Emoji(string status) => status switch {
             "OK" => "✅",
             "INACTIVE" => "❌",
             _ => "❓"
         };
 
-        foreach (var service in response){
+        foreach (var service in response) {
             message += $"**Сервис:** *{service.serviceName}* {Emoji(service.serviceStatus)} \n";
             message += $"- **База данных:** `{service.dataBaseStatus ?? "Неизвестно"}` {Emoji(service.dataBaseStatus)}";
             message += "\n\n";
@@ -85,21 +84,22 @@ public class MessageBuilder {
                $"Как тебе?";
     }
 
-    public static string ShowSchedule(DaySchedule daySchedule)
-    {
+    public static string ShowSchedule(DaySchedule daySchedule) {
         var sb = new StringBuilder();
+        var timeNow = TimeOnly.FromDateTime(DateTime.Now);
+        var lanchTime = false;
+        var isToday = daySchedule.date == DateOnly.FromDateTime(DateTime.Now);
         
         if (daySchedule.date != DateOnly.FromDateTime(DateTime.Now)) {
-            sb.AppendLine("Сегодня нет пар :)\nНо вот ближайшее расписание:");
+            sb.AppendLine("Сейчас нет пар :)\nНо вот ближайшее расписание:");
             sb.AppendLine();
         }
     
-        sb.AppendLine($"📅 *{daySchedule.date:dd.MM.yyyy}* | 🫡 *{daySchedule.mainGroup}*");
+        sb.AppendLine($"📅 <b>{daySchedule.date:dd.MM.yyyy}</b> | 🫡 <b>{daySchedule.mainGroup}</b>");
         sb.AppendLine();
     
-        if (daySchedule.items == null || daySchedule.items.Count == 0)
-        {
-            sb.AppendLine("🎉 *Пар нет! Отдыхаем!*");
+        if (daySchedule.items == null || daySchedule.items.Count == 0) {
+            sb.AppendLine("🎉 <b>Пар нет! Отдыхаем!</b>");
             return sb.ToString();
         }
     
@@ -107,16 +107,36 @@ public class MessageBuilder {
     
         foreach (var item in sortedItems)
         {
-            sb.AppendLine($"--> *{item.startTime:HH:mm}-{item.endTime:HH:mm}*");
-            sb.AppendLine($"Предмет: *{item.name}*");
+            if (item.startTime > new TimeOnly(12, 0) & lanchTime != true) {
+                lanchTime = true;
+                sb.AppendLine("------<b>ОБЕДЕННОЕ ВРЕМЯ</b>------");
+                sb.AppendLine();
+            }
+
+            if (timeNow >= new TimeOnly(12, 15) && timeNow < new TimeOnly(13, 0)) {
+                
+            }
+
+            if (timeNow >= item.startTime && timeNow < item.endTime && isToday) {
+                sb.AppendLine($"👉 <b>{item.startTime:HH:mm}-{item.endTime:HH:mm}</b>");
+                sb.AppendLine($"Предмет: <b>{item.name}</b>");   
+            }
+            else if (timeNow > item.endTime && isToday) {
+                sb.AppendLine($"✅ <del>{item.startTime:HH:mm}-{item.endTime:HH:mm}</del>");
+                sb.AppendLine($"Предмет: <b>{item.name}</b>");   
+            }
+            else {
+                sb.AppendLine($"--> <b>{item.startTime:HH:mm}-{item.endTime:HH:mm}</b>");
+                sb.AppendLine($"Предмет: <b>{item.name}</b>");   
+            }
         
             if (!string.IsNullOrEmpty(item.description))
             {
-                sb.AppendLine($"Описание: **{item.description}**");
+                sb.AppendLine($"Описание: <b>{item.description}</b>");
             }
         
             if (!string.IsNullOrEmpty(item.room_name) && item.subGroups == null) {
-                sb.AppendLine($"Аудитория: {item.room_name}");
+                sb.AppendLine($"Аудитория: <b>{item.room_name}</b>");
             }
             else if (item.subGroups == null) {
                 sb.AppendLine($"Аудитория не указана 🤨");
@@ -126,7 +146,7 @@ public class MessageBuilder {
             if (item.subGroups != null && item.subGroups.Count > 0) {
                 foreach (var subGroup in item.subGroups)
                 {
-                    var subInfo = $" - `{subGroup.subGroup}` : {subGroup.name}";
+                    var subInfo = $" - <code>{subGroup.subGroup}</code> : {subGroup.name}";
                     if (!string.IsNullOrEmpty(subGroup.roomName)) {
                         subInfo += $" → {subGroup.roomName}";
                     }

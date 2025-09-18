@@ -45,6 +45,11 @@ public class TimeHelper {
         if (dayOfWeek >= 6) {
             return GetNextWeekPeriod();
         }
-        return GetWeekPeriod(dateNow);
+        var currentWeek = GetWeekPeriod(dateNow);
+        var actualWeek = new TimePeriod(
+            Start:  dateNow,
+            End: currentWeek.End
+        );
+        return actualWeek;
     }
 }
