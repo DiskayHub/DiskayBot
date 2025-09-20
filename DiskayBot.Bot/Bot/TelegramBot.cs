@@ -103,7 +103,7 @@ public class TelegramBot {
             
             Console.WriteLine(
                 $"@{botInfo.Username} вылетел в космос и готов выполнять работу, для завершения нажмите enter");
-            Console.ReadLine();
+            await Task.Delay(Timeout.Infinite);
         }
         catch (Exception ex){
             Console.WriteLine("Ошибка при запуске бота: " +  ex.Message);

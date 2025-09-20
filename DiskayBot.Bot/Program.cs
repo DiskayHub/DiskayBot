@@ -15,7 +15,7 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) => {
         
         // Кеширование - REDIS
-        var redis = ConnectionMultiplexer.Connect("localhost:6379");
+        var redis = ConnectionMultiplexer.Connect("redis:6379,abortConnect=false");
         services.AddSingleton(redis.GetDatabase());
         
         // HttpClient
@@ -27,7 +27,7 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<UserService>(sp => 
             new UserService(
                 sp.GetRequiredService<HttpClient>(),
-                "http://localhost:5014", 
+                "http://diskay_memory:8080", 
                 "DiskayMemory"
             )
         );
