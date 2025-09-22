@@ -1,8 +1,8 @@
-namespace DiskayBot.Bot.Bot.Exeptions;
+namespace DiskayBot.API.Exeptions;
 
 public class ConnectionRefuseExeption : Exception {
-    public string serviceName { get; }
-    public ConnectionRefuseExeption(string message, string service_name) : base(message) {
-         serviceName = service_name;
+    public string ServiceName { get; }
+    public ConnectionRefuseExeption(string service_name, string message = "Ошибка при отправке запроса") : base(message) {
+         ServiceName = service_name;
     }
 }

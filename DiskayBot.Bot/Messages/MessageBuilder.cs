@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Schedule;
@@ -87,15 +88,21 @@ public class MessageBuilder {
     public static string ShowSchedule(DaySchedule daySchedule) {
         var sb = new StringBuilder();
         var timeNow = TimeOnly.FromDateTime(DateTime.Now);
+        
         var lanchTime = false;
         var isToday = daySchedule.date == DateOnly.FromDateTime(DateTime.Now);
+        
+        CultureInfo russianCulture = new CultureInfo("ru-RU");
+        TextInfo textInfo = russianCulture.TextInfo;
+        
+        string dayName = textInfo.ToTitleCase(daySchedule.date.ToString("ddd", russianCulture));
         
         if (daySchedule.date != DateOnly.FromDateTime(DateTime.Now)) {
             sb.AppendLine("Сейчас нет пар :)\nНо вот ближайшее расписание:");
             sb.AppendLine();
         }
-    
-        sb.AppendLine($"📅 <b>{daySchedule.date:dd.MM.yyyy}</b> | 🫡 <b>{daySchedule.mainGroup}</b>");
+        
+        sb.AppendLine($"📅 <b>{daySchedule.date:dd.MM.yyyy}</b> {dayName} | 🫡 <b>{daySchedule.mainGroup}</b>");
         sb.AppendLine();
     
         if (daySchedule.items == null || daySchedule.items.Count == 0) {

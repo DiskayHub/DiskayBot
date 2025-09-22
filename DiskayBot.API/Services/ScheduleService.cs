@@ -1,8 +1,8 @@
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Schedule;
 using DiskayBot.API.Contracts.Service;
+using DiskayBot.API.Exeptions;
 using DiskayBot.API.Modules;
-using DiskayBot.Bot.Bot.Exeptions;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -30,7 +30,7 @@ public class ScheduleService {
             return null;   
         }
 
-        throw new ConnectionRefuseExeption("Сервер не отвечает, или отвечает, но не успешно", "CollegeAPI");
+        throw new ConnectionRefuseExeption("CollegeAPI", "Сервер не отвечает, или отвечает, но не успешно");
     }
 
     public async Task<DaySchedule?> GetActualSchedule(string groupName) {

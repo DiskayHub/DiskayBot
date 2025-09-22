@@ -1,4 +1,5 @@
 using System.Net;
+using DiskayBot.API.Exeptions;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.CallBacks.Account;
@@ -12,6 +13,7 @@ using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -22,19 +24,17 @@ namespace DiskayBot.Bot.Bot;
 public class TelegramBot {
     private TelegramBotClient bot;
     private CancellationTokenSource cts_token = new();
-    
-    private readonly ScheduleService _scheduleService;
-    private readonly UserService _userService;
-    private readonly RedisController _redis;
+    private ILogger<TelegramBot> _logger;
+    private ILoggerFactory _loggerFactory;
     
     private readonly CommandRegister _commandRegister;
     private readonly EventRegister _eventRegister;
-    
     private readonly EventCreator _eventCreator;
-    public TelegramBot(string bot_token, RedisController redis, UserService userService, ScheduleService scheduleService) {
-        _redis = redis;
-        _userService = userService;
-        _scheduleService = scheduleService;
+    public TelegramBot(string botToken, RedisController redis, UserService userService, ScheduleService scheduleService, 
+        ILogger<TelegramBot> logger, ILoggerFactory loggerFactory) {
+        
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         
         _eventCreator = new EventCreator();
         _eventRegister = new EventRegister();
@@ -50,63 +50,84 @@ public class TelegramBot {
             new SettingsCommand("/settings", userController),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
-            new ChooseGroupCallback("chooseGroup", _userService, _redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),
+            new ChooseGroupCallback("chooseGroup", userService, redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),
             new PreCreateAccountOffer("preCreateAccountOffer", redis, "createAccount"),
             new CreatingAccountCallback("createAccount", redis, userService),
             
             new ChangeProfileDataCallback("changeProfileData", userController),
             new ChooseCourseCallBack("changeCourse", "changeGroup"),
-            new ChooseGroupCallback("changeGroup", _userService, _redis, _eventRegister, "changingGroup", "changeCourse"),
+            new ChooseGroupCallback("changeGroup", userService, redis, _eventRegister, "changingGroup", "changeCourse"),
             new ChangingGroupCallback("changingGroup", redis, userController, userService)
         };
         
         _commandRegister = new CommandRegister(commands);
         
-        bot = new TelegramBotClient(bot_token);
+        bot = new TelegramBotClient(botToken);
         bot.OnUpdate += OnUpdate;
     }
 
     protected async Task OnUpdate(Update update) {
         cts_token.CancelAfter(2000);
-        Console.Write("\n- - - ОБРАБОТКА ЗАПРОСА - - -\n");
+        _logger.LogInformation("Обработка запроса");
 
         var evt = _eventCreator.Create(update);
 
-        Console.WriteLine($"Diskay принял сообщение: {evt.GetContent()}");
-        
+        _logger.LogInformation($"Запрос от пользователя '{evt.Username}', ID={evt.UserId}");
+        _logger.LogInformation($"Тело запроса: {evt.GetContent()}");
+
         try {
             var @event = _eventRegister.GetEvent(evt.GetContent());
 
             if (@event != null) {
-                Console.WriteLine($"НАЙДЕН ОБРАБОТЧИК СОБЫТИЯ: {@event.Name}");
+                _logger.LogInformation($"Обнаружено событие: {@event.Name}");
                 await @event.HandleAsync(evt, cts_token.Token);
             }
 
             var command = _commandRegister.GetCommand(evt.GetContent());
 
             if (command != null) {
+                _logger.LogInformation($"Команда '{command.Name}' найдена, идёт процесс обработки");
                 await command.ExecuteAsync(bot, cts_token.Token, evt);
+                _logger.LogInformation("Обработка завершена");
             }
         }
         catch (NotAuthorizatedExeption e) {
+            _logger.LogError($"Команда не обработана - пользователь '{evt.Username}' не авторизован");
+            _logger.LogDebug("Отправляю сообщение об ошибке");
             await bot.SendMessage(evt.Chat, MessageBuilder.NotRegistered(), ParseMode.Markdown);
+        }
+
+        catch (HttpRequestException e) {
+            _logger.LogError($"Ошибка при отправке запроса к сервису");
+            _logger.LogDebug("Отправляю сообщение об ошибке");
+            await bot.SendMessage(evt.Chat, "*Diskay* не может отправить запрос на сервер.", ParseMode.Markdown);
+        }
+
+        catch (ConnectionRefuseExeption e) {
+            _logger.LogCritical($"Не удаётся подключится к сервису {e.ServiceName}");
+            _logger.LogDebug($"Отправляю сообщение об ошибке");
+            await bot.SendMessage(evt.Chat, "*Diskay* не может соединится с сервером.", ParseMode.Markdown);
         }
         
         catch (Exception e) {
+            _logger.LogCritical(e.Message,
+                $"Необработанная ошибка! " +
+                $"Произошла при выполнении запроса: {evt.GetContent()} от пользователя '{evt.Username}', ID={evt.UserId}");
+            _logger.LogDebug("Отправляю сообщение об ошибке");
             await bot.SendMessage(evt.Chat, "Неизвестная ошибка", ParseMode.Markdown);
         }
     }
 
     public async Task Start() {
         try{
+            _logger.LogInformation("Запуск Telegram бота..");
             var botInfo = await bot.GetMe();
-            
-            Console.WriteLine(
-                $"@{botInfo.Username} вылетел в космос и готов выполнять работу, для завершения нажмите enter");
+            _logger.LogInformation($"{botInfo.Username} запущен!");
+                
             await Task.Delay(Timeout.Infinite);
         }
         catch (Exception ex){
-            Console.WriteLine("Ошибка при запуске бота: " +  ex.Message);
+            _logger.LogCritical(ex, "Критическая ошибка при запуске бота");
         }
     }
 }

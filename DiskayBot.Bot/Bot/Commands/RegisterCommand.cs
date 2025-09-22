@@ -36,7 +36,7 @@ public class RegisterCommand : BotCommand {
             );
         }
         else{
-            await botClient.SendMessage(evt.Chat, "Кажется вы уже авторизованы", ParseMode.Markdown);
+            await botClient.SendMessage(evt.Chat, "Кажется, вы уже авторизованы.", ParseMode.Markdown);
         }
     }
 }
