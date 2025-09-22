@@ -19,5 +19,9 @@ RUN dotnet publish DiskayBot.Bot/DiskayBot.Bot.csproj -c Release -o /app/publish
 # ===== Runtime-стейдж =====
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
+
+# Установка переменной окружения для временной зоны
+ENV TZ=Asia/Yekaterinburg
+
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "DiskayBot.Bot.dll"]
