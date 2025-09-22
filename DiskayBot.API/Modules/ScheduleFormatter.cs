@@ -1,4 +1,5 @@
 using System.Globalization;
+using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Schedule;
 
 namespace DiskayBot.API.Modules;

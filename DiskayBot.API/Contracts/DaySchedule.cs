@@ -1,4 +1,4 @@
-namespace DiskayBot.API.Contracts.Schedule;
+namespace DiskayBot.API.Contracts;
 
 public record SubGroupItem(
     string name,
