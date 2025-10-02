@@ -1,9 +1,11 @@
-﻿using DiskayBot.API.Exeptions;
+﻿using DiskayBot.API.Clients;
+using DiskayBot.API.Exeptions;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Bot;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Events;
 using DiskayBot.Redis;
+using DiskayBot.Services.ScheduleService;
 using DotNetEnv;
 using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,19 +43,19 @@ var host = Host.CreateDefaultBuilder(args)
         // СТОРОННИЕ СЕРВИСЫ
 
         // DiskayMemory
-        services.AddSingleton<UserService>(sp =>
-            new UserService(
+        services.AddSingleton<UserClient>(sp =>
+            new UserClient(
                 sp.GetRequiredService<HttpClient>(),
                 "http://localhost:8080",
                 "DiskayMemory",
-                sp.GetRequiredService<ILogger<UserService>>()
+                sp.GetRequiredService<ILogger<UserClient>>()
             )
         );
 
         // CollegeApi
 
-        services.AddSingleton<ScheduleService>(sp =>
-            new ScheduleService(
+        services.AddSingleton<ScheduleClient>(sp =>
+            new ScheduleClient(
                 sp.GetRequiredService<HttpClient>(),
                 "https://portal.it-college.ru",
                 "College"
@@ -66,13 +68,17 @@ var host = Host.CreateDefaultBuilder(args)
                     botToken,
                     new RedisController(sp.GetRequiredService<IDatabase>(),
                         sp.GetRequiredService<ILogger<RedisController>>()),
-                    sp.GetRequiredService<UserService>(),
+                    sp.GetRequiredService<UserClient>(),
                     sp.GetRequiredService<ScheduleService>(),
                     sp.GetRequiredService<ILogger<TelegramBot>>(),
                     sp.GetRequiredService<ILoggerFactory>()
                 )
             );
         }
+
+        services.AddSingleton<ScheduleService>(sp => 
+            new ScheduleService(sp.GetRequiredService<ScheduleClient>(), sp.GetRequiredService<ILogger<ScheduleService>>())
+        );
     })
     .ConfigureLogging(logging => {
         logging.ClearProviders();
@@ -106,7 +112,19 @@ var host = Host.CreateDefaultBuilder(args)
 
 if (botToken != null) {
     var bot = host.Services.GetRequiredService<TelegramBot>();
-    await bot.Start();
+    var scheduleService = host.Services.GetRequiredService<ScheduleService>();
+    
+    var botThread = new Thread(async void () => {
+        await bot.Start();
+    });
+    var scheduleThread = new Thread(async void () => {
+        await scheduleService.Run(TimeSpan.FromMinutes(10));
+    });
+    
+    scheduleThread.Start();
+    botThread.Start();
+    
+    await Task.Delay(Timeout.Infinite);
 }
 else {
     Console.WriteLine("Токен отсутствует");

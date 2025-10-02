@@ -7,17 +7,17 @@ namespace DiskayBot.Bot.Bot.Controllers;
 
 public class UserController {
     private readonly RedisController _redis;
-    private readonly UserService _userService;
+    private readonly UserClient _userClient;
     
-    public UserController(RedisController redis, UserService userService) {
+    public UserController(RedisController redis, UserClient userClient) {
         _redis = redis;
-        _userService = userService;
+        _userClient = userClient;
     }
 
     private async Task<UserData?> SendRequestAsync(long userId) {
         var userCache =  await _redis.GetUser(userId.ToString());
         if (userCache == null) {
-            var userDataBase = await _userService.Authorization(userId);
+            var userDataBase = await _userClient.Authorization(userId);
             if (userDataBase != null) {
                 await _redis.SaveUser(userId.ToString(), userDataBase, TimeSpan.FromMinutes(30));
                 return userDataBase;

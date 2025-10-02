@@ -1,3 +1,4 @@
+using DiskayBot.API.Clients;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Exeptions;
@@ -6,16 +7,16 @@ using Telegram.Bot;
 namespace DiskayBot.Bot.Bot.Commands;
 
 public class StatisticCommand : BotCommand {
-    private readonly UserService _userService;
-    private readonly ScheduleService _scheduleService;
+    private readonly UserClient _userClient;
+    private readonly ScheduleClient _scheduleClient;
     
-    public StatisticCommand(string name, UserService userService, ScheduleService scheduleService) : base(name) {
-        _userService = userService;
-        _scheduleService = scheduleService;
+    public StatisticCommand(string name, UserClient userClient, ScheduleClient scheduleClient) : base(name) {
+        _userClient = userClient;
+        _scheduleClient = scheduleClient;
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-        var user = await _userService.Authorization(evt.UserId);
+        var user = await _userClient.Authorization(evt.UserId);
         if (user != null) {
             
         }

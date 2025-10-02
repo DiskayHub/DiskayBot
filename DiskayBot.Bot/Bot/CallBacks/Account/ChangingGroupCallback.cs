@@ -14,12 +14,12 @@ namespace DiskayBot.Bot.Bot.CallBacks.Account;
 public class ChangingGroupCallback : BotCommand {
     private readonly RedisController _redis;
     private readonly UserController _userController;
-    private readonly UserService _userService;
+    private readonly UserClient _userClient;
     
-    public ChangingGroupCallback(string name, RedisController redis, UserController userController, UserService userService) : base(name) {
+    public ChangingGroupCallback(string name, RedisController redis, UserController userController, UserClient userClient) : base(name) {
         _redis = redis;
         _userController = userController;
-        _userService = userService;
+        _userClient = userClient;
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
@@ -34,7 +34,7 @@ public class ChangingGroupCallback : BotCommand {
                     sub_group: null,
                     prof_group: null
                 );
-                var request = await _userService.UpdateUser(evt.UserId, requestBody);
+                var request = await _userClient.UpdateUser(evt.UserId, requestBody);
                 if (request == HttpStatusCode.OK) {
                     await bot.EditMessageText(
                         evt.Chat,

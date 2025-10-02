@@ -12,11 +12,11 @@ namespace DiskayBot.Bot.Bot.CallBacks.Account;
 
 public class CreatingAccountCallback : BotCommand {
     private readonly RedisController _redis;
-    private readonly UserService _service;
+    private readonly UserClient _client;
 
-    public CreatingAccountCallback(string callback, RedisController redis, UserService service) : base(callback) {
+    public CreatingAccountCallback(string callback, RedisController redis, UserClient client) : base(callback) {
         _redis = redis;
-        _service = service;
+        _client = client;
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
@@ -31,7 +31,7 @@ public class CreatingAccountCallback : BotCommand {
                 if (cash != null){
                     var groupId = cash.FirstOrDefault(x => x.Name.ToString() == "group_id").Value;
                 
-                    var request = await _service.Registration(evt.UserId, evt.Username, groupId.ToString());
+                    var request = await _client.Registration(evt.UserId, evt.Username, groupId.ToString());
                     if (request == HttpStatusCode.OK){
                         await bot.SendMessage(evt.Chat, $"Добро пожаловать, *{evt.Username}*!", ParseMode.Markdown);
                         await _redis.DeleteData(evt.Chat.Id.ToString());

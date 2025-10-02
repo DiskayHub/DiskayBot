@@ -1,4 +1,5 @@
 using System.Net;
+using DiskayBot.API.Clients;
 using DiskayBot.API.Exeptions;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
@@ -13,6 +14,7 @@ using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
+using DiskayBot.Services.ScheduleService;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Telegram.Bot;
@@ -30,7 +32,7 @@ public class TelegramBot {
     private readonly CommandRegister _commandRegister;
     private readonly EventRegister _eventRegister;
     private readonly EventCreator _eventCreator;
-    public TelegramBot(string botToken, RedisController redis, UserService userService, ScheduleService scheduleService, 
+    public TelegramBot(string botToken, RedisController redis, UserClient userClient, ScheduleService scheduleService, 
         ILogger<TelegramBot> logger, ILoggerFactory loggerFactory) {
         
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -39,25 +41,25 @@ public class TelegramBot {
         _eventCreator = new EventCreator();
         _eventRegister = new EventRegister();
 
-        var userController = new UserController(redis, userService);
+        var userController = new UserController(redis, userClient);
         
         var commands = new List<ICommand>() {
             new StartCommand("/start"),
-            new CheckStatusCommand("/check_bot_status", userService, scheduleService),
+            new CheckStatusCommand("/check_bot_status", userClient),
             new ShowProfileCommand("/show_profile", userController),
             new FastScheduleCommand("/disky", userController, scheduleService),
             new RegisterCommand("/create_account", userController, "chooseCourse"),
             new SettingsCommand("/settings", userController),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
-            new ChooseGroupCallback("chooseGroup", userService, redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),
+            new ChooseGroupCallback("chooseGroup", userClient, redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),
             new PreCreateAccountOffer("preCreateAccountOffer", redis, "createAccount"),
-            new CreatingAccountCallback("createAccount", redis, userService),
+            new CreatingAccountCallback("createAccount", redis, userClient),
             
             new ChangeProfileDataCallback("changeProfileData", userController),
             new ChooseCourseCallBack("changeCourse", "changeGroup"),
-            new ChooseGroupCallback("changeGroup", userService, redis, _eventRegister, "changingGroup", "changeCourse"),
-            new ChangingGroupCallback("changingGroup", redis, userController, userService)
+            new ChooseGroupCallback("changeGroup", userClient, redis, _eventRegister, "changingGroup", "changeCourse"),
+            new ChangingGroupCallback("changingGroup", redis, userController, userClient)
         };
         
         _commandRegister = new CommandRegister(commands);

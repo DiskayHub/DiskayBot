@@ -1,9 +1,11 @@
+using DiskayBot.API.Clients;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
+using DiskayBot.Services.ScheduleService;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -24,7 +26,7 @@ public class FastScheduleCommand : BotCommand {
         var user = await _userController.GetUserData(evt.UserId);
 
         if (user != null) {
-            var daySchedule = await _schedule.GetActualSchedule($"ИТ{user.group_name}");
+            var daySchedule = _schedule.GetActualSchedule($"ИТ{user.group_name}");
             if (daySchedule != null) {
                 var result = MessageBuilder.ShowSchedule(daySchedule);
                 await bot.SendMessage(evt.Chat, result,  ParseMode.Html);

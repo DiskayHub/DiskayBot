@@ -13,13 +13,13 @@ using Microsoft.Extensions.Logging;
 
 namespace DiskayBot.API.Services;
 
-public class UserService{
+public class UserClient{
     private readonly HttpClient _client;
     private readonly string _baseUrl;
-    private readonly ILogger<UserService> _logger;
+    private readonly ILogger<UserClient> _logger;
     public string Name { get; }
 
-    public UserService(HttpClient client,  string baseUrl, string name, ILogger<UserService> logger) {
+    public UserClient(HttpClient client,  string baseUrl, string name, ILogger<UserClient> logger) {
         Name = name;
         _client = client;
         _baseUrl = baseUrl;
