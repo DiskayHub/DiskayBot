@@ -6,6 +6,7 @@ using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Events;
 using DiskayBot.Redis;
 using DiskayBot.Services.ScheduleService;
+using DiskayBot.Services.ScheduleService.Components;
 using DotNetEnv;
 using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.Extensions.DependencyInjection;
@@ -79,6 +80,10 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<ScheduleService>(sp => 
             new ScheduleService(sp.GetRequiredService<ScheduleClient>(), sp.GetRequiredService<ILogger<ScheduleService>>())
         );
+
+        services.AddSingleton<ScheduleAnalyser>(sp =>
+            new ScheduleAnalyser(sp.GetRequiredService<ScheduleService>(), sp.GetRequiredService<ILogger<ScheduleAnalyser>>())
+        );
     })
     .ConfigureLogging(logging => {
         logging.ClearProviders();
@@ -113,6 +118,9 @@ var host = Host.CreateDefaultBuilder(args)
 if (botToken != null) {
     var bot = host.Services.GetRequiredService<TelegramBot>();
     var scheduleService = host.Services.GetRequiredService<ScheduleService>();
+    var scheduleAnalyser = host.Services.GetRequiredService<ScheduleAnalyser>();
+    
+    scheduleAnalyser.Listen();
     
     var botThread = new Thread(async void () => {
         await bot.Start();

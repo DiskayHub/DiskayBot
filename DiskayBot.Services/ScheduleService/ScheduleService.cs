@@ -10,6 +10,8 @@ public class ScheduleService {
     private readonly ILogger<ScheduleService> _logger;
     private Dictionary<string, List<DaySchedule>> _groupDaySchedules;
     
+    public event Action<Dictionary<string, List<DaySchedule>>> OnAllSchedulesUpdated;
+    
     public ScheduleService(ScheduleClient client, ILogger<ScheduleService> logger) {
         _client = client;
         _allGroups = [
@@ -31,6 +33,7 @@ public class ScheduleService {
             }
         }
         _logger.LogInformation($"Обновление завершено. Всего групп: {_groupDaySchedules.Count}");
+        OnAllSchedulesUpdated?.Invoke(_groupDaySchedules);
     }
 
     public DaySchedule? GetActualSchedule(string groupName) {
@@ -60,11 +63,16 @@ public class ScheduleService {
 
     public async Task Run(TimeSpan delay, CancellationToken? token = default) {
         _logger.LogInformation("Запуск сервиса ScheduleService");
-        
         var timer = new PeriodicTimer(delay);
-        await UpdateSchedules();
-        if (await timer.WaitForNextTickAsync()) {
-            await UpdateSchedules();   
+
+        try {
+            await UpdateSchedules();
+            if (await timer.WaitForNextTickAsync()) {
+                await UpdateSchedules();
+            }
+        }
+        catch (HttpRequestException ex) {
+            _logger.LogError(ex, "Ошибка при отправке запроса к Schedule API!");
         }
     }
 }
