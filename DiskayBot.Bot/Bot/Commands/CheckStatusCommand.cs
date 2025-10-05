@@ -1,5 +1,4 @@
 using DiskayBot.API.Clients;
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Messages;
 using Telegram.Bot;

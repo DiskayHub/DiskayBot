@@ -1,5 +1,5 @@
 using System.Data;
-using DiskayBot.API.Services;
+using DiskayBot.API.Clients;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Registers;
 using DiskayBot.Bot.Events;

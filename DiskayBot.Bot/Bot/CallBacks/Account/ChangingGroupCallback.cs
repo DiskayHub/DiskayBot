@@ -1,6 +1,6 @@
 using System.Net;
+using DiskayBot.API.Clients;
 using DiskayBot.API.Contracts.Users.UpdateUser;
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;

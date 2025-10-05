@@ -1,13 +1,11 @@
 ﻿using DiskayBot.API.Clients;
 using DiskayBot.API.Exeptions;
 using DiskayBot.API.Interfaces;
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Bot;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Events;
 using DiskayBot.Redis;
 using DiskayBot.Services.ScheduleService;
-using DiskayBot.Services.ScheduleService.Components;
 using DotNetEnv;
 using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,27 +62,27 @@ var host = Host.CreateDefaultBuilder(args)
             )
         );
 
-        if (botToken != null) {
-            services.AddSingleton<TelegramBot>(sp =>
-                new TelegramBot(
-                    botToken,
-                    new RedisController(sp.GetRequiredService<IDatabase>(),
-                        sp.GetRequiredService<ILogger<RedisController>>()),
-                    sp.GetRequiredService<UserClient>(),
-                    sp.GetRequiredService<ScheduleService>(),
-                    sp.GetRequiredService<ILogger<TelegramBot>>(),
-                    sp.GetRequiredService<ILoggerFactory>()
-                )
-            );
-        }
-
         services.AddSingleton<ScheduleService>(sp => 
-            new ScheduleService(sp.GetRequiredService<ScheduleClient>(), sp.GetRequiredService<ILogger<ScheduleService>>())
+            new ScheduleService(sp.GetRequiredService<IScheduleClient>(), sp.GetRequiredService<ILogger<ScheduleService>>(), sp.GetRequiredService<ILoggerFactory>())
         );
 
         services.AddSingleton<ScheduleAnalyser>(sp =>
             new ScheduleAnalyser(sp.GetRequiredService<ScheduleService>(), sp.GetRequiredService<ILogger<ScheduleAnalyser>>())
         );
+        
+        if (botToken != null) {
+            services.AddSingleton<TelegramBot>(sp =>
+                new TelegramBot(
+                    botToken,
+                    new RedisController(sp.GetRequiredService<IDatabase>(), 
+                        sp.GetRequiredService<ILogger<RedisController>>()),
+                        sp.GetRequiredService<UserClient>(),
+                        sp.GetRequiredService<ScheduleService>(),
+                        sp.GetRequiredService<ILogger<TelegramBot>>(),
+                        sp.GetRequiredService<ILoggerFactory>()
+                )
+            );
+        }
     })
     .ConfigureLogging(logging => {
         logging.ClearProviders();
@@ -119,8 +117,6 @@ var host = Host.CreateDefaultBuilder(args)
 if (botToken != null) {
     var bot = host.Services.GetRequiredService<TelegramBot>();
     var scheduleService = host.Services.GetRequiredService<ScheduleService>();
-    var scheduleAnalyser = host.Services.GetRequiredService<ScheduleAnalyser>();
-    scheduleAnalyser.Listen();
     
     var botThread = new Thread(async void () => {
         await bot.Start();

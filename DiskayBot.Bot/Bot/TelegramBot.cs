@@ -1,7 +1,6 @@
 using System.Net;
 using DiskayBot.API.Clients;
 using DiskayBot.API.Exeptions;
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.CallBacks.Account;
 using DiskayBot.Bot.Bot.CallBacks.Data;
@@ -25,6 +24,8 @@ namespace DiskayBot.Bot.Bot;
 
 public class TelegramBot {
     private TelegramBotClient bot;
+    private readonly ScheduleService _scheduleService;
+    private readonly UserClient _userClient;
     private CancellationTokenSource cts_token = new();
     private ILogger<TelegramBot> _logger;
     private ILoggerFactory _loggerFactory;
@@ -32,12 +33,14 @@ public class TelegramBot {
     private readonly CommandRegister _commandRegister;
     private readonly EventRegister _eventRegister;
     private readonly EventCreator _eventCreator;
-    public TelegramBot(string botToken, RedisController redis, UserClient userClient, ScheduleService scheduleService, 
+    public TelegramBot(string botToken, RedisController redis, UserClient userClient, ScheduleService scheduleService,
         ILogger<TelegramBot> logger, ILoggerFactory loggerFactory) {
-        
+
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        
+
+        _userClient = userClient;
+        _scheduleService = scheduleService;
         _eventCreator = new EventCreator();
         _eventRegister = new EventRegister();
 
@@ -66,6 +69,7 @@ public class TelegramBot {
         
         bot = new TelegramBotClient(botToken);
         bot.OnUpdate += OnUpdate;
+        _scheduleService.Analyser.NewWeekScheduleAppear += OnEventHandler;
     }
 
     protected async Task OnUpdate(Update update) {
@@ -95,33 +99,59 @@ public class TelegramBot {
         }
         catch (NotAuthorizatedExeption e) {
             _logger.LogError($"Команда не обработана - пользователь '{evt.Username}' не авторизован");
-            _logger.LogDebug("Отправляю сообщение об ошибке");
+            _logger.LogDebug("Отправляю сообщение об ошибке...");
             await bot.SendMessage(evt.Chat, MessageBuilder.NotRegistered(), ParseMode.Markdown);
         }
 
         catch (HttpRequestException e) {
             _logger.LogError($"Ошибка при отправке запроса к сервису");
-            _logger.LogDebug("Отправляю сообщение об ошибке");
+            _logger.LogDebug("Отправляю сообщение об ошибке...");
             await bot.SendMessage(evt.Chat, "*Diskay* не может отправить запрос на сервер.", ParseMode.Markdown);
         }
 
         catch (ConnectionRefuseExeption e) {
             _logger.LogCritical($"Не удаётся подключится к сервису {e.ServiceName}");
-            _logger.LogDebug($"Отправляю сообщение об ошибке");
+            _logger.LogDebug("Отправляю сообщение об ошибке...");
             await bot.SendMessage(evt.Chat, "*Diskay* не может соединится с сервером.", ParseMode.Markdown);
         }
-        
+
         catch (Exception e) {
             _logger.LogCritical(e.Message,
                 $"Необработанная ошибка! " +
                 $"Произошла при выполнении запроса: {evt.GetContent()} от пользователя '{evt.Username}', ID={evt.UserId}");
-            _logger.LogDebug("Отправляю сообщение об ошибке");
+            _logger.LogDebug("Отправляю сообщение об ошибке...");
             await bot.SendMessage(evt.Chat, "Неизвестная ошибка", ParseMode.Markdown);
+        }
+        finally {
+            _logger.LogDebug("Обработка завершена");
+        }
+    }
+
+    protected async Task OnEventHandler() {
+        try {
+            _logger.LogInformation("Произошло глобальное событие");
+            var allUsers = await _userClient.GetAllUsers();
+            if (allUsers != null) {
+                foreach (var user in allUsers) {
+                    await bot.SendMessage(
+                        chatId: user.user_id,
+                        text: "Обнаружено новое расписание!\n\nЧтобы посмотреть, воспользуетесь командой */disky*",
+                        parseMode:  ParseMode.Markdown
+                    );
+                    await Task.Delay(200);
+                }   
+            }
+            else {
+                _logger.LogInformation("Пользователи отсутствуют, событие игнорируется");
+            }
+        }
+        catch (Exception e) {
+            _logger.LogCritical("Не удалось отправить сообщение пользователям!");
         }
     }
 
     public async Task Start() {
-        try{
+        try {
             _logger.LogInformation("Запуск Telegram бота..");
             var botInfo = await bot.GetMe();
             _logger.LogInformation($"{botInfo.Username} запущен!");

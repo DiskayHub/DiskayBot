@@ -3,7 +3,6 @@ using DiskayBot.API.Contracts;
 using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
 using DiskayBot.Services.ScheduleService;
-using DiskayBot.Services.ScheduleService.Components;
 using DiskayBot.Services.ScheduleService.Data;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -17,9 +16,10 @@ using System;
 using System.Collections.Generic;
 
 public class ScheduleAnalyserTests {
-    private WeekSchedule CreateSchedule(string groupName, string dayName, DateOnly start, DateOnly end) {
+    private WeekSchedule CreateSchedule(string groupName, DateOnly start, DateOnly end, string itemName) {
         var period = new TimePeriod(start, end);
-        var schedule = new WeekSchedule(period, new() {
+        return new WeekSchedule(period, new Dictionary<string, List<DaySchedule>>
+        {
             [groupName] = new List<DaySchedule>
             {
                 new DaySchedule(
@@ -27,92 +27,73 @@ public class ScheduleAnalyserTests {
                     groupName,
                     new List<DayItem>
                     {
-                        new DayItem(dayName, "Math", "A-101", new TimeOnly(9,0), new TimeOnly(10,30), null)
+                        new DayItem(itemName, "Desc", "A-101", new TimeOnly(9,0), new TimeOnly(10,30), null)
                     }
                 )
             }
         });
-        return schedule;
     }
 
     [Fact]
-    public void Listen_ShouldInitializeLastSchedule_OnFirstScheduleAppear() {
+    public void Analyse_ShouldRaiseNewWeekScheduleAppear_WhenWeekPeriodChanges()
+    {
         // Arrange
         var loggerMock = new Mock<ILogger<ScheduleAnalyser>>();
         var serviceLoggerMock = new Mock<ILogger<ScheduleService>>();
         var clientMock = new Mock<IScheduleClient>();
+
         var service = new ScheduleService(clientMock.Object, serviceLoggerMock.Object);
         var analyser = new ScheduleAnalyser(service, loggerMock.Object);
-
         analyser.Listen();
 
-        // Act
+        bool eventTriggered = false;
+        analyser.NewWeekScheduleAppear += () => eventTriggered = true;
+
+        var oldSchedule = CreateSchedule("ИТ25-11", new DateOnly(2025,10,5), new DateOnly(2025,10,11), "Math");
+        var newSchedule = CreateSchedule("ИТ25-11", new DateOnly(2025,10,12), new DateOnly(2025,10,18), "Math");
+
+        // Инициализируем _lastSchedule через событие OnFirstScheduleAppear
+        service.Schedule = oldSchedule;
         service.RaiseFirstScheduleAppear();
-
-        // Assert
-        Assert.NotNull(service.Schedule);
-    }
-
-    [Fact]
-    public void Analyse_ShouldInvokeNewWeekScheduleAppear_WhenWeekPeriodChanges() {
-        // Arrange
-        var loggerMock = new Mock<ILogger<ScheduleAnalyser>>();
-        var serviceLoggerMock = new Mock<ILogger<ScheduleService>>();
-        var clientMock = new Mock<IScheduleClient>();
-        var service = new ScheduleService(clientMock.Object, serviceLoggerMock.Object);
-        var analyser = new ScheduleAnalyser(service, loggerMock.Object);
-
-        analyser.Listen();
-
-        bool newWeekTriggered = false;
-        analyser.NewWeekScheduleAppear += () => newWeekTriggered = true;
-
-        var oldSchedule = CreateSchedule("ИТ25-11", "Понедельник",
-            new DateOnly(2025, 10, 5), new DateOnly(2025, 10, 11));
-        var newSchedule = CreateSchedule("ИТ25-11", "Вторник",
-            new DateOnly(2025, 10, 12), new DateOnly(2025, 10, 18));
-
-        // Инициализируем "_lastSchedule"
-        service.RaiseFirstScheduleAppear();
-        typeof(ScheduleAnalyser)
-            .GetField("_lastSchedule", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .SetValue(analyser, oldSchedule);
 
         // Act
         service.RaiseScheduleUpdated(newSchedule);
 
         // Assert
-        Assert.True(newWeekTriggered);
+        Assert.True(eventTriggered, "Должно быть вызвано событие NewWeekScheduleAppear, когда меняется WeekPeriod");
     }
 
     [Fact]
-    public void Analyse_ShouldNotInvokeEvent_WhenWeekPeriodSame() {
+    public void Analyse_ShouldLog_WhenGroupScheduleChanges() {
         // Arrange
         var loggerMock = new Mock<ILogger<ScheduleAnalyser>>();
         var serviceLoggerMock = new Mock<ILogger<ScheduleService>>();
         var clientMock = new Mock<IScheduleClient>();
+
         var service = new ScheduleService(clientMock.Object, serviceLoggerMock.Object);
         var analyser = new ScheduleAnalyser(service, loggerMock.Object);
-
         analyser.Listen();
 
-        bool newWeekTriggered = false;
-        analyser.NewWeekScheduleAppear += () => newWeekTriggered = false;
+        var oldSchedule = CreateSchedule("ИТ25-11", new DateOnly(2025,10,5), new DateOnly(2025,10,11), "Math");
+        var newSchedule = CreateSchedule("ИТ25-11", new DateOnly(2025,10,5), new DateOnly(2025,10,11), "Physics"); // поменял предмет
 
-        var schedule1 = CreateSchedule("ИТ25-11", "Понедельник",
-            new DateOnly(2025, 10, 5), new DateOnly(2025, 10, 11));
-        var schedule2 = CreateSchedule("ИТ25-11", "Понедельник",
-            new DateOnly(2025, 10, 5), new DateOnly(2025, 10, 11));
-
+        // Инициализируем _lastSchedule через событие
+        service.Schedule = oldSchedule;
         service.RaiseFirstScheduleAppear();
-        typeof(ScheduleAnalyser)
-            .GetField("_lastSchedule", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            ?.SetValue(analyser, schedule1);
 
         // Act
-        service.RaiseScheduleUpdated(schedule2);
+        service.RaiseScheduleUpdated(newSchedule);
 
         // Assert
-        Assert.False(newWeekTriggered);
+        loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("РАСПИСАНИЕ ДЛЯ ГРУППЫ ИТ25-11 НЕ СООТВЕТСТВУЕТ НОВОМУ РАСПИСАНИЮ")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()
+            ),
+            Times.Once
+        );
     }
 }

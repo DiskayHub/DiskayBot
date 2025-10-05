@@ -3,19 +3,20 @@ using DiskayBot.API.Contracts;
 using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
 using DiskayBot.Services.ScheduleService.Data;
+using DiskayBot.Services.ScheduleService.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace DiskayBot.Services.ScheduleService;
 
-public class ScheduleService {
+public class ScheduleService : IScheduleServiceEvents {
     private readonly IScheduleClient _client;
     private readonly List<string> _allGroups;
     private readonly ILogger<ScheduleService> _logger;
-    public WeekSchedule Schedule {get; private set;}
+    public readonly ScheduleAnalyser Analyser;
+    public WeekSchedule Schedule {get; set; }
     public event Action<WeekSchedule> OnScheduleUpdated;
-    public event Action OnFirstScheduleAppear;
     
-    public ScheduleService(IScheduleClient client, ILogger<ScheduleService> logger) {
+    public ScheduleService(IScheduleClient client, ILogger<ScheduleService> logger, ILoggerFactory loggerFactory) {
         _client = client;
         _allGroups = [
             "ИТ25-11", "ИТ25-12", "ИТ25-13", "ИТ25-14",
@@ -25,6 +26,7 @@ public class ScheduleService {
         ];
         _logger = logger;
         Schedule = new WeekSchedule();
+        Analyser = new ScheduleAnalyser(this, loggerFactory.CreateLogger<ScheduleAnalyser>());
     }
 
     private async Task UpdateSchedules() {
@@ -72,12 +74,12 @@ public class ScheduleService {
     }
 
     public async Task Run(TimeSpan delay, CancellationToken? token = default) {
+        Analyser.Listen();
         _logger.LogInformation("Запуск сервиса ScheduleService");
+        
         var timer = new PeriodicTimer(delay);
-
         try {
             await UpdateSchedules();
-            OnFirstScheduleAppear.Invoke();
             if (await timer.WaitForNextTickAsync()) {
                 await UpdateSchedules();
             }
@@ -86,7 +88,4 @@ public class ScheduleService {
             _logger.LogError(ex, "Ошибка при отправке запроса к Schedule API!");
         }
     }
-    
-    public void RaiseFirstScheduleAppear() => OnFirstScheduleAppear?.Invoke();
-    public void RaiseScheduleUpdated(WeekSchedule schedule) => OnScheduleUpdated?.Invoke(schedule);
 }

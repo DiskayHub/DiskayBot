@@ -1,5 +1,5 @@
 using System.Net;
-using DiskayBot.API.Services;
+using DiskayBot.API.Clients;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Events;
 using DiskayBot.Redis;

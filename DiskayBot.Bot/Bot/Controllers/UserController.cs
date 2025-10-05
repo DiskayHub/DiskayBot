@@ -1,5 +1,5 @@
+using DiskayBot.API.Clients;
 using DiskayBot.API.Contracts;
-using DiskayBot.API.Services;
 using DiskayBot.Redis;
 using Telegram.Bot.Types;
 

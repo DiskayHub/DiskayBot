@@ -1,16 +1,17 @@
 using DiskayBot.API.Contracts;
 using DiskayBot.Services.ScheduleService.Data;
+using DiskayBot.Services.ScheduleService.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace DiskayBot.Services.ScheduleService.Components;
+namespace DiskayBot.Services.ScheduleService;
 
 public class ScheduleAnalyser {
-    private readonly ScheduleService _service;
+    private readonly IScheduleServiceEvents _events;
     private readonly ILogger<ScheduleAnalyser> _logger;
     private WeekSchedule? _lastSchedule;
-    public event Action NewWeekScheduleAppear;
-    public ScheduleAnalyser(ScheduleService scheduleService, ILogger<ScheduleAnalyser> logger) {
-        _service = scheduleService;
+    public event Func<Task> NewWeekScheduleAppear;
+    public ScheduleAnalyser(IScheduleServiceEvents scheduleEvents, ILogger<ScheduleAnalyser> logger) {
+        _events = scheduleEvents;
         _logger = logger;
         _lastSchedule = null;
     }
@@ -22,7 +23,6 @@ public class ScheduleAnalyser {
                     if (!updatedWeekSchedule.GroupsSchedule.TryGetValue(group, out var otherList)) {
                         _logger.LogInformation($"ИЗМЕНЕНИЕ: НЕ НАЙДЕНА ГРУППА {group}");
                     }
-
                     if (otherList != null && !scheduleList.SequenceEqual(otherList))
                         _logger.LogInformation($"РАСПИСАНИЕ ДЛЯ ГРУППЫ {group} НЕ СООТВЕТСТВУЕТ НОВОМУ РАСПИСАНИЮ");
                 }
@@ -32,15 +32,15 @@ public class ScheduleAnalyser {
                 NewWeekScheduleAppear.Invoke();
             }
         }
+        else {
+            _logger.LogInformation("Нет исходных данных, анализ сравнения невозможен");
+            _lastSchedule = updatedWeekSchedule;
+        }
         _logger.LogInformation("Анализ завершён");
     }
 
-    private void InitSchedule() {
-        _lastSchedule = _service.Schedule;
-    }
-
     public void Listen() {
-        _service.OnFirstScheduleAppear += InitSchedule;
-        _service.OnScheduleUpdated += Analyse;
+        _logger.LogInformation("Подключаю обработчики для анализа расписания...");
+        _events.OnScheduleUpdated += Analyse;
     }
 }
