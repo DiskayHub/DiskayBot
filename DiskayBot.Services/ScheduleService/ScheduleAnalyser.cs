@@ -13,10 +13,14 @@ public class ScheduleAnalyser {
     public ScheduleAnalyser(IScheduleServiceEvents scheduleEvents, ILogger<ScheduleAnalyser> logger) {
         _events = scheduleEvents;
         _logger = logger;
-        _lastSchedule = null;
     }
     private void Analyse(WeekSchedule updatedWeekSchedule) {
         _logger.LogInformation("Анализирую расписание..");
+        UpdateAnalysis(updatedWeekSchedule);
+        _logger.LogInformation("Анализ завершён");
+    }
+    private void UpdateAnalysis(WeekSchedule updatedWeekSchedule) {
+        _logger.LogInformation("Проверка соответствия с прошлым расписанием..");
         if (_lastSchedule != null) {
             if (Equals(_lastSchedule.WeekPeriod, updatedWeekSchedule.WeekPeriod)) {
                 foreach ((string group, List<DaySchedule> scheduleList) in _lastSchedule.GroupsSchedule) {
@@ -36,7 +40,6 @@ public class ScheduleAnalyser {
             _logger.LogInformation("Нет исходных данных, анализ сравнения невозможен");
             _lastSchedule = updatedWeekSchedule;
         }
-        _logger.LogInformation("Анализ завершён");
     }
 
     public void Listen() {

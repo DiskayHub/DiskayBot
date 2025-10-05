@@ -31,6 +31,7 @@ public class ScheduleService : IScheduleServiceEvents {
 
     private async Task UpdateSchedules() {
         _logger.LogInformation("Обновление данных о расписании...");
+        var previosSchedule = Schedule;
         foreach (var group in _allGroups) {
             var schedule = await _client.GetActualScheduleWeek(group);
             if (schedule != null) {

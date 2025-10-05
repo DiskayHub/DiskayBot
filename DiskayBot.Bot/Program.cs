@@ -8,6 +8,7 @@ using DiskayBot.Redis;
 using DiskayBot.Services.ScheduleService;
 using DotNetEnv;
 using Microsoft.AspNetCore.Routing.Constraints;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Microsoft.Extensions.Hosting;
@@ -18,15 +19,20 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 
-var WORK_DIRECTORY = "../../../";
+var WORK_DIRECTORY = Path.GetFullPath("../../../");
 
 Env.Load(WORK_DIRECTORY);
 
 string? botToken = Environment.GetEnvironmentVariable("BOT_TOKEN");
 
 var host = Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration((context, config) => {
+        config.SetBasePath(WORK_DIRECTORY);
+        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+    })
     .ConfigureServices((context, services) => {
         Console.WriteLine("Текущая директория: " + Environment.CurrentDirectory);
+        var version = context.Configuration["Version"];
 
         // Кеширование - REDIS
         var redis = ConnectionMultiplexer.Connect("localhost:6379,abortConnect=false");
