@@ -1,18 +1,21 @@
 using DiskayBot.API.Clients;
 using DiskayBot.API.Contracts;
+using DiskayBot.API.Interfaces;
+using DiskayBot.API.Modules;
+using DiskayBot.Services.ScheduleService.Data;
 using Microsoft.Extensions.Logging;
 
 namespace DiskayBot.Services.ScheduleService;
 
 public class ScheduleService {
-    private readonly ScheduleClient _client;
+    private readonly IScheduleClient _client;
     private readonly List<string> _allGroups;
     private readonly ILogger<ScheduleService> _logger;
-    private Dictionary<string, List<DaySchedule>> _groupDaySchedules;
+    public WeekSchedule Schedule {get; private set;}
+    public event Action<WeekSchedule> OnScheduleUpdated;
+    public event Action OnFirstScheduleAppear;
     
-    public event Action<Dictionary<string, List<DaySchedule>>> OnAllSchedulesUpdated;
-    
-    public ScheduleService(ScheduleClient client, ILogger<ScheduleService> logger) {
+    public ScheduleService(IScheduleClient client, ILogger<ScheduleService> logger) {
         _client = client;
         _allGroups = [
             "ИТ25-11", "ИТ25-12", "ИТ25-13", "ИТ25-14",
@@ -21,19 +24,26 @@ public class ScheduleService {
             "ИТ22-11", "ИТ22-12"
         ];
         _logger = logger;
-        _groupDaySchedules = new Dictionary<string, List<DaySchedule>>();
+        Schedule = new WeekSchedule();
     }
 
     private async Task UpdateSchedules() {
         _logger.LogInformation("Обновление данных о расписании...");
         foreach (var group in _allGroups) {
-            var schedule = await _client.GetCurrentScheduleWeek(group);
+            var schedule = await _client.GetActualScheduleWeek(group);
             if (schedule != null) {
-                _groupDaySchedules[group] = schedule;
+                Schedule.WeekPeriod = schedule.WeekPeriod;
+                Schedule.GroupsSchedule[group] = schedule.Schedule;
             }
         }
-        _logger.LogInformation($"Обновление завершено. Всего групп: {_groupDaySchedules.Count}");
-        OnAllSchedulesUpdated?.Invoke(_groupDaySchedules);
+        _logger.LogInformation($"Обновление завершено. Всего групп: {Schedule.GroupsSchedule.Count}");
+
+        var scheduleUpdateEvent = new WeekSchedule(
+            weekPeriod: TimeHelper.GetActualWeekPeriod(),
+            groupsSchedule: Schedule.GroupsSchedule
+        );
+        
+        OnScheduleUpdated.Invoke(scheduleUpdateEvent);
     }
 
     public DaySchedule? GetActualSchedule(string groupName) {
@@ -57,7 +67,7 @@ public class ScheduleService {
 
     public List<DaySchedule>? GetSchedule(string groupName) {
         _logger.LogInformation($"Получаю расписание для группы: {groupName}...");
-        _groupDaySchedules.TryGetValue(groupName, out var schedule);
+        Schedule.GroupsSchedule.TryGetValue(groupName, out var schedule);
         return schedule;
     }
 
@@ -67,6 +77,7 @@ public class ScheduleService {
 
         try {
             await UpdateSchedules();
+            OnFirstScheduleAppear.Invoke();
             if (await timer.WaitForNextTickAsync()) {
                 await UpdateSchedules();
             }
@@ -75,4 +86,7 @@ public class ScheduleService {
             _logger.LogError(ex, "Ошибка при отправке запроса к Schedule API!");
         }
     }
+    
+    public void RaiseFirstScheduleAppear() => OnFirstScheduleAppear?.Invoke();
+    public void RaiseScheduleUpdated(WeekSchedule schedule) => OnScheduleUpdated?.Invoke(schedule);
 }

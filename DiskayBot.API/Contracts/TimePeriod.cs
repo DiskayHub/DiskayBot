@@ -1,4 +1,4 @@
-namespace DiskayBot.API.Modules;
+namespace DiskayBot.API.Contracts;
 
 public record TimePeriod(
     DateOnly Start,

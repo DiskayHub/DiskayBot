@@ -1,5 +1,6 @@
 ﻿using DiskayBot.API.Clients;
 using DiskayBot.API.Exeptions;
+using DiskayBot.API.Interfaces;
 using DiskayBot.API.Services;
 using DiskayBot.Bot.Bot;
 using DiskayBot.Bot.Bot.Exeptions;
@@ -55,7 +56,7 @@ var host = Host.CreateDefaultBuilder(args)
 
         // CollegeApi
 
-        services.AddSingleton<ScheduleClient>(sp =>
+        services.AddSingleton<IScheduleClient>(sp =>
             new ScheduleClient(
                 sp.GetRequiredService<HttpClient>(),
                 "https://portal.it-college.ru",
@@ -119,7 +120,6 @@ if (botToken != null) {
     var bot = host.Services.GetRequiredService<TelegramBot>();
     var scheduleService = host.Services.GetRequiredService<ScheduleService>();
     var scheduleAnalyser = host.Services.GetRequiredService<ScheduleAnalyser>();
-    
     scheduleAnalyser.Listen();
     
     var botThread = new Thread(async void () => {

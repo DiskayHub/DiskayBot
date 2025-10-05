@@ -1,12 +1,13 @@
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Schedule;
 using DiskayBot.API.Exeptions;
+using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DiskayBot.API.Clients;
 
-public class ScheduleClient {
+public class ScheduleClient : IScheduleClient {
     private readonly HttpClient _client;
     private readonly string _baseUrl;
     public readonly string Name;
@@ -31,15 +32,19 @@ public class ScheduleClient {
         throw new ConnectionRefuseExeption("CollegeAPI", "Сервер не отвечает, или отвечает, но не успешно");
     }
 
-    public async Task<List<DaySchedule>?> GetCurrentScheduleWeek(string groupName) {
-        var weekPeriod = TimeHelper.GetWeekPeriod(DateOnly.FromDateTime(DateTime.Now));
+    public async Task<GroupWeekSchedule?> GetActualScheduleWeek(string groupName) {
+        var weekPeriod = TimeHelper.GetActualWeekPeriod();
         var requestBody = DayScheduleRequest.Create(weekPeriod, groupName);
 
         if (requestBody != null) {
             var responseObject = await GetSchedule(requestBody);
             if (responseObject != null) {
                 var days = ScheduleFormatter.FormatPeriod(responseObject, groupName);
-                return days;
+                var weekSchedule = new GroupWeekSchedule(
+                    WeekPeriod: weekPeriod,
+                    Schedule: days
+                );
+                return weekSchedule;
             }
             return null;
         }

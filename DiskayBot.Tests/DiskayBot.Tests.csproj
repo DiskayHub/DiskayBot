@@ -22,6 +22,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\DiskayBot.API\DiskayBot.API.csproj" />
+      <ProjectReference Include="..\DiskayBot.Services\DiskayBot.Services.csproj" />
     </ItemGroup>
 
 </Project>
