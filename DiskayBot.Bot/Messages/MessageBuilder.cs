@@ -9,12 +9,10 @@ namespace DiskayBot.Bot.Messages;
 public class MessageBuilder {
     public static string StartMessage() {
         return
-            "Привет, я *Diskay* 💫\n\n" +
-            "Твой бот-помощник в _Колледже Цифровых Технологий_.\n\n" +
-            "Вот что я умею:\n\n" +
-            "📆 *Расписание*\n" +
-            "Покажу только то расписание, которое будет актуально для вас.\n" +
-            "Для этого используете команду:\n*/disky*";
+            "*Привет, я Diskay* 💫\n\n" +
+            "Твой бот-помощник в *Колледже Цифровых Технологий*.\n\n" +
+            "📆 *Расписание* - */disky*\n" +
+            "*-->* Покажу только то расписание, которое будет актуально для вас.";
     }
 
     public static string CheckBotStatus(List<PingResponse?> response) {
@@ -162,6 +160,18 @@ public class MessageBuilder {
             sb.AppendLine();
         }
     
+        return sb.ToString();
+    }
+
+    public static string AboutBot(string version) {
+        var sb = new StringBuilder();
+        sb.AppendLine("*Привет, друг!* 💫\n");
+        sb.AppendLine("Сейчас всё активно развивается — появляются новые идеи и изменения, и это вдохновляет.\n");
+        sb.AppendLine("*Diskay* не является большим проектом, но ориентирован именно на нас с вами - обывателей колледжа.\n");
+        sb.AppendLine("Огромное спасибо всем, кто поддерживает данный проект!\n");
+        
+        sb.AppendLine($"*Версия: {version}* ✨");
+        
         return sb.ToString();
     }
 }

@@ -48,6 +48,7 @@ public class TelegramBot {
             new FastScheduleCommand("/disky", userController, scheduleService),
             new RegisterCommand("/create_account", userController, "chooseCourse"),
             new SettingsCommand("/settings", userController),
+            new AboutCommand("/about", "0.1-alfa"),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
             new ChooseGroupCallback("chooseGroup", userService, redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),
