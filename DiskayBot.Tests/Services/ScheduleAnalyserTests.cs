@@ -4,6 +4,9 @@ using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
 using DiskayBot.Services.ScheduleService;
 using DiskayBot.Services.ScheduleService.Data;
+using DiskayBot.Services.ScheduleService.Events;
+using DiskayBot.Services.ScheduleService.Interfaces;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -16,84 +19,159 @@ using System;
 using System.Collections.Generic;
 
 public class ScheduleAnalyserTests {
-    private WeekSchedule CreateSchedule(string groupName, DateOnly start, DateOnly end, string itemName) {
-        var period = new TimePeriod(start, end);
-        return new WeekSchedule(period, new Dictionary<string, List<DaySchedule>>
+    private UpdateScheduleEvent CreateDaysSchedule(
+    bool differentWeeks = false,
+    bool differentGroups = false,
+    bool differentItems = false) {
+        // === 1. Определяем даты недели ===
+        var baseStart = new DateOnly(2025, 10, 6);
+        var baseEnd = new DateOnly(2025, 10, 12);
+
+        var currentStart = differentWeeks ? baseStart.AddDays(7) : baseStart;
+        var currentEnd = differentWeeks ? baseEnd.AddDays(7) : baseEnd;
+
+        // === 2. Определяем группы ===
+        var baseGroups = new[] { "ИТ24-11", "ИТ24-12" };
+        var currentGroups = differentGroups
+            ? new[] { "ИТ24-13", "ИТ24-14" }
+            : baseGroups;
+
+        // === 3. Создаём предметы (DayItem) ===
+        List<DayItem> CreateDayItems(bool different)
         {
-            [groupName] = new List<DaySchedule>
+            if (!different)
             {
-                new DaySchedule(
-                    new DateOnly(2025, 10, 5),
-                    groupName,
-                    new List<DayItem>
-                    {
-                        new DayItem(itemName, "Desc", "A-101", new TimeOnly(9,0), new TimeOnly(10,30), null)
-                    }
-                )
+                return new List<DayItem>
+                {
+                    new("Математика", "Лекция", "101", new TimeOnly(9, 0), new TimeOnly(10, 30),
+                        new List<SubGroupItem> { new("Подгруппа A", "Описание", "101", "1") })
+                };
             }
-        });
-    }
 
-    [Fact]
-    public void Analyse_ShouldRaiseNewWeekScheduleAppear_WhenWeekPeriodChanges()
-    {
-        // Arrange
-        var loggerMock = new Mock<ILogger<ScheduleAnalyser>>();
-        var serviceLoggerMock = new Mock<ILogger<ScheduleService>>();
-        var clientMock = new Mock<IScheduleClient>();
+            // отличающиеся предметы
+            return new List<DayItem>
+            {
+                new("Физика", "Практика", "202", new TimeOnly(11, 0), new TimeOnly(12, 30),
+                    new List<SubGroupItem> { new("Подгруппа B", "Описание", "202", "2") })
+            };
+        }
 
-        var service = new ScheduleService(clientMock.Object, serviceLoggerMock.Object);
-        var analyser = new ScheduleAnalyser(service, loggerMock.Object);
-        analyser.Listen();
+        // === 4. Создаём расписание на неделю ===
+        List<DaySchedule> CreateWeekDays(string group, bool different)
+        {
+            return new List<DaySchedule>
+            {
+                new(
+                    new DateOnly(2025, 10, 6),
+                    group,
+                    CreateDayItems(different)
+                )
+            };
+        }
 
-        bool eventTriggered = false;
-        analyser.NewWeekScheduleAppear += () => eventTriggered = true;
-
-        var oldSchedule = CreateSchedule("ИТ25-11", new DateOnly(2025,10,5), new DateOnly(2025,10,11), "Math");
-        var newSchedule = CreateSchedule("ИТ25-11", new DateOnly(2025,10,12), new DateOnly(2025,10,18), "Math");
-
-        // Инициализируем _lastSchedule через событие OnFirstScheduleAppear
-        service.Schedule = oldSchedule;
-        service.RaiseFirstScheduleAppear();
-
-        // Act
-        service.RaiseScheduleUpdated(newSchedule);
-
-        // Assert
-        Assert.True(eventTriggered, "Должно быть вызвано событие NewWeekScheduleAppear, когда меняется WeekPeriod");
-    }
-
-    [Fact]
-    public void Analyse_ShouldLog_WhenGroupScheduleChanges() {
-        // Arrange
-        var loggerMock = new Mock<ILogger<ScheduleAnalyser>>();
-        var serviceLoggerMock = new Mock<ILogger<ScheduleService>>();
-        var clientMock = new Mock<IScheduleClient>();
-
-        var service = new ScheduleService(clientMock.Object, serviceLoggerMock.Object);
-        var analyser = new ScheduleAnalyser(service, loggerMock.Object);
-        analyser.Listen();
-
-        var oldSchedule = CreateSchedule("ИТ25-11", new DateOnly(2025,10,5), new DateOnly(2025,10,11), "Math");
-        var newSchedule = CreateSchedule("ИТ25-11", new DateOnly(2025,10,5), new DateOnly(2025,10,11), "Physics"); // поменял предмет
-
-        // Инициализируем _lastSchedule через событие
-        service.Schedule = oldSchedule;
-        service.RaiseFirstScheduleAppear();
-
-        // Act
-        service.RaiseScheduleUpdated(newSchedule);
-
-        // Assert
-        loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("РАСПИСАНИЕ ДЛЯ ГРУППЫ ИТ25-11 НЕ СООТВЕТСТВУЕТ НОВОМУ РАСПИСАНИЮ")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()
-            ),
-            Times.Once
+        // === 5. Собираем WeekSchedule для предыдущей недели ===
+        var prevWeek = new WeekSchedule(
+            new TimePeriod(baseStart, baseEnd),
+            baseGroups.ToDictionary(
+                g => g,
+                g => CreateWeekDays(g, false)
+            )
         );
+
+        // === 6. И для текущей недели ===
+        var currWeek = new WeekSchedule(
+            new TimePeriod(currentStart, currentEnd),
+            currentGroups.ToDictionary(
+                g => g,
+                g => CreateWeekDays(g, differentItems)
+            )
+        );
+
+        // === 7. Формируем событие ===
+        return new UpdateScheduleEvent(prevWeek, currWeek);
+    }
+
+    
+    [Fact]
+    public void Listen_ShouldSubscribeToEvent() {
+        // Arrange
+        var mockEvents = new Mock<IScheduleServiceEvents>();
+        var mockLogger = new Mock<ILogger<ScheduleAnalyser>>();
+
+        var analyser = new ScheduleAnalyser(mockEvents.Object, mockLogger.Object);
+
+        // Act
+        analyser.Listen();
+
+        // Assert
+        mockEvents.VerifyAdd(e => e.OnScheduleUpdated += It.IsAny<Action<UpdateScheduleEvent>>(), Times.Once);
+    }
+    
+    [Fact]
+    public void Analyse_ShouldBeCalled_WhenEventRaised() {
+        // Arrange
+        var mockEvents = new Mock<IScheduleServiceEvents>();
+        var mockLogger = new Mock<ILogger<ScheduleAnalyser>>();
+        var analyser = new ScheduleAnalyser(mockEvents.Object, mockLogger.Object);
+        analyser.Listen();
+
+        var updateEvent = new UpdateScheduleEvent(
+            previosWeekSchedule: new WeekSchedule(
+                new TimePeriod(new DateOnly(2025, 10, 6), new DateOnly(2025, 10, 12)),
+                new Dictionary<string, List<DaySchedule>>()
+            ),
+            currentWeekSchedule: new WeekSchedule(
+                new TimePeriod(new DateOnly(2025, 10, 6), new DateOnly(2025, 10, 12)),
+                new Dictionary<string, List<DaySchedule>>()
+            )
+        );
+
+        // Act — вызываем событие у мока
+        mockEvents.Raise(e => e.OnScheduleUpdated += null, updateEvent);
+    }
+    
+    [Fact]
+    public void WhenNewSheduleAppears_ShouldInvokeEvent() {
+        var mockEvent = new Mock<IScheduleServiceEvents>();
+        var mockLogger = new Mock<ILogger<ScheduleAnalyser>>();
+        
+        var analyser = new ScheduleAnalyser(mockEvent.Object, mockLogger.Object);
+        analyser.Listen();
+        
+        bool newWeekEventCalled = false;
+        analyser.NewWeekScheduleAppear += () => {
+            newWeekEventCalled = true;
+            return Task.CompletedTask;
+        };
+
+        var updateEvent = CreateDaysSchedule(
+            differentWeeks: true
+        );
+        
+        mockEvent.Raise(e => e.OnScheduleUpdated += null, updateEvent);
+        Assert.True(newWeekEventCalled, "Событие NewWeekScheduleAppear должно было вызваться");
+    }
+    
+    [Fact] void WhenScheduleChanged_ShouldInvokeEvent() {
+        var mockEvent = new Mock<IScheduleServiceEvents>();
+        var mockLogger = new Mock<ILogger<ScheduleAnalyser>>();
+        
+        var analyser = new ScheduleAnalyser(mockEvent.Object, mockLogger.Object);
+        bool changeWeekEventCalled = false;
+        analyser.ScheduleChanged += () => {
+            changeWeekEventCalled = true;
+            return Task.CompletedTask;
+        };
+        
+        analyser.Listen();
+
+        var updateEvent = CreateDaysSchedule(
+            differentWeeks: false,
+            differentGroups: false,
+            differentItems: true
+        );
+        
+        mockEvent.Raise(e => e.OnScheduleUpdated += null, updateEvent);
+        Assert.True(changeWeekEventCalled, "Событие ScheduleChanged должно было вызваться");
     }
 }

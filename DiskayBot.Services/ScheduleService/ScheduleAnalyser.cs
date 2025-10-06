@@ -1,34 +1,40 @@
 using DiskayBot.API.Contracts;
 using DiskayBot.Services.ScheduleService.Data;
+using DiskayBot.Services.ScheduleService.Events;
 using DiskayBot.Services.ScheduleService.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace DiskayBot.Services.ScheduleService;
 
-public class ScheduleAnalyser {
+public class ScheduleAnalyser : IScheduleAnalyser {
     private readonly IScheduleServiceEvents _events;
     private readonly ILogger<ScheduleAnalyser> _logger;
-    private WeekSchedule? _lastSchedule;
     public event Func<Task> NewWeekScheduleAppear;
+    public event Func<Task> ScheduleChanged;
     public ScheduleAnalyser(IScheduleServiceEvents scheduleEvents, ILogger<ScheduleAnalyser> logger) {
         _events = scheduleEvents;
         _logger = logger;
     }
-    private void Analyse(WeekSchedule updatedWeekSchedule) {
+
+    public void Analyse(UpdateScheduleEvent updatedEvent) {
         _logger.LogInformation("Анализирую расписание..");
-        UpdateAnalysis(updatedWeekSchedule);
+        UpdateAnalysis(updatedEvent);
         _logger.LogInformation("Анализ завершён");
     }
-    private void UpdateAnalysis(WeekSchedule updatedWeekSchedule) {
+
+    public void UpdateAnalysis(UpdateScheduleEvent updatedEvent) {
         _logger.LogInformation("Проверка соответствия с прошлым расписанием..");
-        if (_lastSchedule != null) {
-            if (Equals(_lastSchedule.WeekPeriod, updatedWeekSchedule.WeekPeriod)) {
-                foreach ((string group, List<DaySchedule> scheduleList) in _lastSchedule.GroupsSchedule) {
-                    if (!updatedWeekSchedule.GroupsSchedule.TryGetValue(group, out var otherList)) {
+        var previosWeekSchedule = updatedEvent.previosWeekSchedule;
+        var currentWeekSchedule = updatedEvent.currentWeekSchedule;
+        
+        if (previosWeekSchedule != null && previosWeekSchedule.GroupsSchedule.Count != 0) {
+            if (Equals(previosWeekSchedule.WeekPeriod, currentWeekSchedule.WeekPeriod)) {
+                foreach ((string group, List<DaySchedule> scheduleList) in previosWeekSchedule.GroupsSchedule) {
+                    if (!currentWeekSchedule.GroupsSchedule.TryGetValue(group, out var otherList)) {
                         _logger.LogInformation($"ИЗМЕНЕНИЕ: НЕ НАЙДЕНА ГРУППА {group}");
                     }
                     if (otherList != null && !scheduleList.SequenceEqual(otherList))
-                        _logger.LogInformation($"РАСПИСАНИЕ ДЛЯ ГРУППЫ {group} НЕ СООТВЕТСТВУЕТ НОВОМУ РАСПИСАНИЮ");
+                        ScheduleChanged.Invoke();
                 }
             }
             else {
@@ -38,7 +44,6 @@ public class ScheduleAnalyser {
         }
         else {
             _logger.LogInformation("Нет исходных данных, анализ сравнения невозможен");
-            _lastSchedule = updatedWeekSchedule;
         }
     }
 

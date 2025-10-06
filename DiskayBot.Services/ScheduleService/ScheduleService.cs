@@ -3,6 +3,7 @@ using DiskayBot.API.Contracts;
 using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
 using DiskayBot.Services.ScheduleService.Data;
+using DiskayBot.Services.ScheduleService.Events;
 using DiskayBot.Services.ScheduleService.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -14,7 +15,7 @@ public class ScheduleService : IScheduleServiceEvents {
     private readonly ILogger<ScheduleService> _logger;
     public readonly ScheduleAnalyser Analyser;
     public WeekSchedule Schedule {get; set; }
-    public event Action<WeekSchedule> OnScheduleUpdated;
+    public event Action<UpdateScheduleEvent> OnScheduleUpdated;
     
     public ScheduleService(IScheduleClient client, ILogger<ScheduleService> logger, ILoggerFactory loggerFactory) {
         _client = client;
@@ -31,7 +32,7 @@ public class ScheduleService : IScheduleServiceEvents {
 
     private async Task UpdateSchedules() {
         _logger.LogInformation("Обновление данных о расписании...");
-        var previosSchedule = Schedule;
+        var previosSchedule = new WeekSchedule(Schedule);
         foreach (var group in _allGroups) {
             var schedule = await _client.GetActualScheduleWeek(group);
             if (schedule != null) {
@@ -46,7 +47,7 @@ public class ScheduleService : IScheduleServiceEvents {
             groupsSchedule: Schedule.GroupsSchedule
         );
         
-        OnScheduleUpdated.Invoke(scheduleUpdateEvent);
+        OnScheduleUpdated.Invoke(new  UpdateScheduleEvent(previosSchedule, scheduleUpdateEvent));
     }
 
     public DaySchedule? GetActualSchedule(string groupName) {
@@ -88,5 +89,9 @@ public class ScheduleService : IScheduleServiceEvents {
         catch (HttpRequestException ex) {
             _logger.LogError(ex, "Ошибка при отправке запроса к Schedule API!");
         }
+    }
+
+    public void RaiseOnScheduleUpdated(UpdateScheduleEvent e) {
+        OnScheduleUpdated.Invoke(e);
     }
 }

@@ -128,7 +128,7 @@ if (botToken != null) {
         await bot.Start();
     });
     var scheduleThread = new Thread(async void () => {
-        await scheduleService.Run(TimeSpan.FromMinutes(10));
+        await scheduleService.Run(TimeSpan.FromSeconds(10));
     });
     
     scheduleThread.Start();
