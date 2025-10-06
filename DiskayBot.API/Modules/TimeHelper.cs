@@ -1,3 +1,5 @@
+using DiskayBot.API.Contracts;
+
 namespace DiskayBot.API.Modules;
 
 public class TimeHelper {
