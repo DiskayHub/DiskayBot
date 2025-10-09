@@ -16,7 +16,7 @@ public class EventCreator {
                 case UpdateType.Message:
                     return new MessageUserEvent(updateInfo, update.Message.Text);
                 case UpdateType.CallbackQuery:
-                    return new CallbackQueryUserEvent(updateInfo, update.CallbackQuery.Data);
+                    return new CallbackQueryUserEvent(updateInfo, update.CallbackQuery.Data,  update.CallbackQuery.Id);
             } 
         }
         throw new Exception("Unknown update type");

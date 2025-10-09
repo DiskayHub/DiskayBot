@@ -4,6 +4,7 @@ using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.CallBacks.Account;
 using DiskayBot.Bot.Bot.CallBacks.Data;
+using DiskayBot.Bot.Bot.CallBacks.Schedule;
 using DiskayBot.Bot.Bot.Commands;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;
@@ -45,10 +46,12 @@ public class TelegramBot {
             new StartCommand("/start"),
             new CheckStatusCommand("/check_bot_status", userService, scheduleService),
             new ShowProfileCommand("/show_profile", userController),
-            new FastScheduleCommand("/disky", userController, scheduleService),
+            new FastScheduleCommand("/disky", userController, scheduleService, "updateSchedule"),
             new RegisterCommand("/create_account", userController, "chooseCourse"),
             new SettingsCommand("/settings", userController),
             new AboutCommand("/about", "0.1-alfa"),
+            
+            new UpdateSchedule("updateSchedule", userController, scheduleService),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
             new ChooseGroupCallback("chooseGroup", userService, redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),

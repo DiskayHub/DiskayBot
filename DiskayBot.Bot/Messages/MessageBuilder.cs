@@ -94,7 +94,7 @@ public class MessageBuilder {
         string dayName = textInfo.ToTitleCase(daySchedule.date.ToString("ddd", russianCulture));
         
         if (daySchedule.date != DateOnly.FromDateTime(DateTime.Now)) {
-            sb.AppendLine("Сейчас нет пар :)\nНо вот ближайшее расписание:");
+            sb.AppendLine("Отдыхай, но будь готов.\nВот ближайшее расписание 👇");
             sb.AppendLine();
         }
         

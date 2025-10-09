@@ -3,10 +3,12 @@ using DiskayBot.Bot.Abstractions;
 namespace DiskayBot.Bot.Events;
 
 public class CallbackQueryUserEvent : UserEvent {
+    public readonly string Id;
     public readonly string Name;
     public readonly string? Query;
 
-    public CallbackQueryUserEvent(UpdateInfo info, string callBackQuery) : base(info) {
+    public CallbackQueryUserEvent(UpdateInfo info, string callBackQuery, string id) : base(info) {
+        Id = id;
         var parts = callBackQuery.Split('=');
         
         if (parts.Length == 2){
