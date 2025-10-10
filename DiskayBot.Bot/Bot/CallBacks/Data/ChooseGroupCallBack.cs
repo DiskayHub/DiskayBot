@@ -18,10 +18,13 @@ public class ChooseGroupCallback : BotCommand {
     private readonly string _nextCallback;
     private readonly string _backCourse;
     private readonly UserService _userService;
-    public ChooseGroupCallback(string callback, UserService service, RedisController redis, EventRegister eventRegister, string nextNextCallback, string backCourse) : base(callback) {
+    private readonly bool _saveAsName;
+    public ChooseGroupCallback(string callback, UserService service, RedisController redis, EventRegister eventRegister, 
+        string nextNextCallback, string backCourse, bool saveAsName = false) : base(callback) {
         _userService = service;
         _nextCallback = nextNextCallback;
         _backCourse = backCourse;
+        _saveAsName = saveAsName;
         eventRegister.HandleEvent(nextNextCallback, new SaveGroupHandler("Сохранение группы", redis));
     }
     
@@ -49,8 +52,12 @@ public class ChooseGroupCallback : BotCommand {
             return int.Parse(parts[1]);
         }).ToList();
         
-        var buttons = allGroups.Select(group => 
-            InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.id}")
+        var buttons = allGroups.Select(group => {
+                if (_saveAsName) {
+                    return InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.name}");   
+                }
+                return InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.id}");
+            }
         ).ToArray();
         
         var keyboard = new InlineKeyboardMarkup(new[] {
