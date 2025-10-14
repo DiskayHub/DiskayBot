@@ -19,7 +19,7 @@ public class CheckSchedulesCommand : BotCommand {
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-        var messageText = "Узнать расписание 🔍";
+        var messageText = "Проверить расписание 🔍\n\n*Diskay* покажет ближайшее расписание (поэтому смотри на дату)";
         if (await _userController.IsAuthenticated(evt.UserId)) {
             try {
                 var callbackEvent = (CallbackQueryUserEvent)evt;

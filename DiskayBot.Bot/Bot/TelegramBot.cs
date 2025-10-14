@@ -64,7 +64,7 @@ public class TelegramBot {
             new ChooseGroupCallback("changeGroup", userService, redis, _eventRegister, "changingGroup", "changeCourse"),
             new ChangingGroupCallback("changingGroup", redis, userController, userService),
             
-            new ChooseGroupCallback("checkGroup", userService, redis, _eventRegister, "checkingSchedule", "/check=edit", true),
+            new ChooseGroupCallback("checkGroup", userService, redis, _eventRegister, "checkingSchedule", "/check=edit", true, false),
             new CheckScheduleCallback("checkingSchedule", scheduleService, redis, "checkGroup"),
         };
         

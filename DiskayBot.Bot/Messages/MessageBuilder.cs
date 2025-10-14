@@ -81,7 +81,7 @@ public class MessageBuilder {
                $"Как тебе?";
     }
 
-    public static string ShowSchedule(DaySchedule daySchedule) {
+    public static string ShowSchedule(DaySchedule daySchedule, bool timeDescription = true) {
         var sb = new StringBuilder();
         var timeNow = TimeOnly.FromDateTime(DateTime.Now);
         
@@ -93,7 +93,7 @@ public class MessageBuilder {
         
         string dayName = textInfo.ToTitleCase(daySchedule.date.ToString("ddd", russianCulture));
         
-        if (daySchedule.date != DateOnly.FromDateTime(DateTime.Now)) {
+        if (timeDescription && (daySchedule.date != DateOnly.FromDateTime(DateTime.Now))) {
             sb.AppendLine("Отдыхай, но будь готов.\nВот ближайшее расписание 👇");
             sb.AppendLine();
         }

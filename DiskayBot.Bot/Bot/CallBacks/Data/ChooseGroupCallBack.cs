@@ -20,12 +20,14 @@ public class ChooseGroupCallback : BotCommand {
     private readonly UserService _userService;
     private readonly bool _saveAsName;
     public ChooseGroupCallback(string callback, UserService service, RedisController redis, EventRegister eventRegister, 
-        string nextNextCallback, string backCourse, bool saveAsName = false) : base(callback) {
+        string nextNextCallback, string backCourse, bool saveAsName = false, bool saveRedis = true) : base(callback) {
         _userService = service;
         _nextCallback = nextNextCallback;
         _backCourse = backCourse;
         _saveAsName = saveAsName;
-        eventRegister.HandleEvent(nextNextCallback, new SaveGroupHandler("Сохранение группы", redis));
+        if (saveRedis) {
+            eventRegister.HandleEvent(nextNextCallback, new SaveGroupHandler("Сохранение группы", redis));   
+        }
     }
     
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
@@ -54,7 +56,7 @@ public class ChooseGroupCallback : BotCommand {
         
         var buttons = allGroups.Select(group => {
                 if (_saveAsName) {
-                    return InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.name}");   
+                    return InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.name}={course}");   
                 }
                 return InlineKeyboardButton.WithCallbackData(group.name, $"{_nextCallback}={group.id}");
             }

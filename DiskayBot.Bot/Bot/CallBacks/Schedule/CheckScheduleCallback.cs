@@ -4,6 +4,7 @@ using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
 using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DiskayBot.Bot.Bot.CallBacks.Schedule;
@@ -24,15 +25,23 @@ public class CheckScheduleCallback : BotCommand {
         if (callbackEvent.Query != null) {
             var schedule = await _scheduleService.GetActualSchedule($"ИТ{callbackEvent.Query}");
             if (schedule != null) {
-                await bot.EditMessageText(callbackEvent.Chat, callbackEvent.MessageId, MessageBuilder.ShowSchedule(schedule), replyMarkup: GetKeyboard());   
+                await bot.EditMessageText(
+                    callbackEvent.Chat, 
+                    callbackEvent.MessageId,
+                    MessageBuilder.ShowSchedule(schedule, false),
+                    replyMarkup: GetKeyboard(callbackEvent.QueryArgs[0] ?? callbackEvent.Query),
+                    parseMode: ParseMode.Html
+                );   
             }
         }
-        throw new Exception();
+        else {
+            throw new Exception();   
+        }
     }
 
-    private InlineKeyboardMarkup GetKeyboard() {
+    private InlineKeyboardMarkup GetKeyboard(string course) {
         return new InlineKeyboardMarkup(new[] {
-            new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", _previosCallback) }
+            new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", $"{_previosCallback}={course}") }
         });
     }
 }
