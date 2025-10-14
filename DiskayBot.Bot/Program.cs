@@ -1,11 +1,13 @@
 ﻿using DiskayBot.API.Exeptions;
 using DiskayBot.API.Services;
+using DiskayBot.Bot;
 using DiskayBot.Bot.Bot;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Events;
 using DiskayBot.Redis;
 using DotNetEnv;
 using Microsoft.AspNetCore.Routing.Constraints;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Microsoft.Extensions.Hosting;
@@ -16,18 +18,29 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 
-var WORK_DIRECTORY = "../../../";
+var WORK_DIRECTORY = "../../../"; //Путь относительно bin/Debug/net9.0
 
 Env.Load(WORK_DIRECTORY);
 
 string? botToken = Environment.GetEnvironmentVariable("BOT_TOKEN");
 
 var host = Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration((context, config) => {
+            var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../"));
+            config.SetBasePath(path);
+            config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            config.AddEnvironmentVariables();
+        }
+    )
     .ConfigureServices((context, services) => {
+        var configuration = context.Configuration.GetSection("Configuration").Get<Configuration>();
+
         Console.WriteLine("Текущая директория: " + Environment.CurrentDirectory);
+        Console.WriteLine($"REDIS: {configuration.Services.Redis.ToString()}");
+        Console.WriteLine($"DiskayMemory: {configuration.Services.DiskayMemory.ToString()}");
 
         // Кеширование - REDIS
-        var redis = ConnectionMultiplexer.Connect("localhost:6379,abortConnect=false");
+        var redis = ConnectionMultiplexer.Connect($"{configuration.Services.Redis.url},abortConnect=false");
         if (redis.IsConnected) {
             services.AddSingleton(redis.GetDatabase());
         }
@@ -44,7 +57,7 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<UserService>(sp =>
             new UserService(
                 sp.GetRequiredService<HttpClient>(),
-                "http://localhost:8080",
+                configuration.Services.DiskayMemory.url,
                 "DiskayMemory",
                 sp.GetRequiredService<ILogger<UserService>>()
             )
@@ -97,7 +110,7 @@ var host = Host.CreateDefaultBuilder(args)
         )
 
         .WriteTo.File(
-            path: $"{WORK_DIRECTORY}/logs/all/.log", // путь относительно bin/Debug/net9.0
+            path: $"{WORK_DIRECTORY}/logs/all/.log",
             rollingInterval: RollingInterval.Day,
             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
         )
