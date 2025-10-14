@@ -26,14 +26,19 @@ public class ChooseCourseCallBack : BotCommand {
     }
     
     public InlineKeyboardMarkup GetReplyMarkup() {
-        var courses = new List<string>();
-        courses = ["1", "2", "3", "4"];
+        var courses = new Dictionary<string, string> {
+            {"1", ""},
+            {"2", ""},
+            {"3", ""},
+            {"4", ""}
+        };
 
-        var keyboard_rows = courses.Select(course =>
-            new[] { InlineKeyboardButton.WithCallbackData(course, $"{_nextCallback}={course}") }
+        var keyboardRows = courses.Select(dictObject =>
+            new[] { InlineKeyboardButton.WithCallbackData($"{dictObject.Key} курс {dictObject.Value}", $"{_nextCallback}={dictObject.Key}") }
         ).ToList();
         
-        var keyboard = new InlineKeyboardMarkup(keyboard_rows);
+        
+        var keyboard = new InlineKeyboardMarkup(keyboardRows);
         
         return keyboard;
     }

@@ -4,7 +4,9 @@ using FluentValidation;
 namespace DiskayBot.API.Validators;
 
 public class DayScheduleRequestValidator : AbstractValidator<DayScheduleRequest> {
-    public DayScheduleRequestValidator() {
+    public DayScheduleRequestValidator() 
+    {
+  
         RuleFor(d => d.d_start)
             .NotEmpty()
             .Matches(@"^\d{4}-\d{2}-\d{2}$")

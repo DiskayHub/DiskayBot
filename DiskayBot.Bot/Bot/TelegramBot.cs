@@ -47,6 +47,7 @@ public class TelegramBot {
             new CheckStatusCommand("/check_bot_status", userService, scheduleService),
             new ShowProfileCommand("/show_profile", userController),
             new FastScheduleCommand("/disky", userController, scheduleService, "updateSchedule"),
+            new CheckSchedulesCommand("/check", userController, "checkGroup"),
             new RegisterCommand("/create_account", userController, "chooseCourse"),
             new SettingsCommand("/settings", userController),
             new AboutCommand("/about", "0.1-alfa"),
@@ -61,7 +62,10 @@ public class TelegramBot {
             new ChangeProfileDataCallback("changeProfileData", userController),
             new ChooseCourseCallBack("changeCourse", "changeGroup"),
             new ChooseGroupCallback("changeGroup", userService, redis, _eventRegister, "changingGroup", "changeCourse"),
-            new ChangingGroupCallback("changingGroup", redis, userController, userService)
+            new ChangingGroupCallback("changingGroup", redis, userController, userService),
+            
+            new ChooseGroupCallback("checkGroup", userService, redis, _eventRegister, "checkingSchedule", "/check=edit", true, false),
+            new CheckScheduleCallback("checkingSchedule", scheduleService, redis, "checkGroup"),
         };
         
         _commandRegister = new CommandRegister(commands);
