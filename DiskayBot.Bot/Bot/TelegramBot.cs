@@ -50,7 +50,7 @@ public class TelegramBot {
             new CheckSchedulesCommand("/check", userController, "checkGroup"),
             new RegisterCommand("/create_account", userController, "chooseCourse"),
             new SettingsCommand("/settings", userController),
-            new AboutCommand("/about", "0.1-alfa"),
+            new AboutCommand("/about", "0.12-alfa"),
             
             new UpdateSchedule("updateSchedule", userController, scheduleService),
             
