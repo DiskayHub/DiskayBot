@@ -165,7 +165,7 @@ public class UserClient {
         if (response.IsSuccessStatusCode) {
             var stringContent = await response.Content.ReadAsStringAsync();
             var users = JsonSerializer.Deserialize<List<TelegramUser>>(stringContent);
-                _logger.LogInformation($"Пользователи получены, количество пользователей: {users.Count}");
+                _logger.LogDebug($"Пользователи получены, количество пользователей: {users.Count}");
             return users;
         }
         _logger.LogCritical("Не удалось получить всех пользователей!");

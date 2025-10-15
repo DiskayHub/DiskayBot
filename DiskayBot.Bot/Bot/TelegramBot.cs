@@ -95,7 +95,7 @@ public class TelegramBot {
             var command = _commandRegister.GetCommand(evt.GetContent());
 
             if (command != null) {
-                _logger.LogInformation($"Команда '{command.Name}' найдена, идёт процесс обработки");
+                _logger.LogDebug($"Команда '{command.Name}' найдена, идёт процесс обработки");
                 await command.ExecuteAsync(bot, cts_token.Token, evt);
                 _logger.LogInformation("Обработка завершена");
             }
