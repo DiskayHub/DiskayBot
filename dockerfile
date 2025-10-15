@@ -7,6 +7,7 @@ COPY DiskayBot.sln ./
 COPY DiskayBot.API/DiskayBot.API.csproj DiskayBot.API/
 COPY DiskayBot.Bot/DiskayBot.Bot.csproj DiskayBot.Bot/
 COPY DiskayBot.Redis/DiskayBot.Redis.csproj DiskayBot.Redis/
+COPY DiskayBot.Services/DiskayBot.Services.csproj DiskayBot.Services/
 COPY DiskayBot.Tests/DiskayBot.Tests.csproj DiskayBot.Tests/
 
 # Восстановление зависимостей
@@ -14,6 +15,7 @@ RUN dotnet restore
 
 # Скопировать всё остальное и собрать
 COPY . .
+COPY DiskayBot.Bot/appsettings.json ./
 RUN dotnet publish DiskayBot.Bot/DiskayBot.Bot.csproj -c Release -o /app/publish
 
 # ===== Runtime-стейдж =====

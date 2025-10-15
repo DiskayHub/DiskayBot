@@ -20,25 +20,28 @@ var WORK_DIRECTORY = "../../../"; //Путь относительно bin/Debug/
 Env.Load(WORK_DIRECTORY);
 
 string? botToken = Environment.GetEnvironmentVariable("BOT_TOKEN");
+bool isDocker = Environment.CurrentDirectory == "/app"; 
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) => {
-            if (Environment.CurrentDirectory != "/app") { // Если бот запущен не в Docker
+            if (!isDocker) { // Если бот запущен не в Docker
+                Console.WriteLine("DEFAULT CONFIGURATION");
                 var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../"));
                 config.SetBasePath(path);   
+            }
+            else {
+                Console.WriteLine("DOCKER CONFIGURATION");
             }
             config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
             config.AddEnvironmentVariables();
         }
     )
     .ConfigureServices((context, services) => {
-        var configuration = context.Configuration.GetSection("Configuration").Get<Configuration>();
-
-        if (configuration == null) {
-            throw new NullReferenceException($"{nameof(configuration)} not configured");
-        }
-
         Console.WriteLine("Текущая директория: " + Environment.CurrentDirectory);
+        
+        var configurator = new Configurator(context.Configuration, isDocker);
+        var configuration = configurator.GetConfiguration();
+        
         Console.WriteLine($"REDIS: {configuration.Services.Redis}");
         Console.WriteLine($"DiskayMemory: {configuration.Services.DiskayMemory}");
         Console.WriteLine($"ScheduleService: {configuration.Services.ScheduleService}");
