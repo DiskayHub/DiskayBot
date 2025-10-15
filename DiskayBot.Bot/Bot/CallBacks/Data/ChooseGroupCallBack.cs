@@ -1,6 +1,6 @@
 using System.Data;
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
+using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Registers;
 using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Events.Data;
@@ -17,11 +17,11 @@ namespace DiskayBot.Bot.Bot.CallBacks.Data;
 public class ChooseGroupCallback : BotCommand {
     private readonly string _nextCallback;
     private readonly string _backCourse;
-    private readonly UserService _userService;
+    private readonly MemoryController _memoryController;
     private readonly bool _saveAsName;
-    public ChooseGroupCallback(string callback, UserService service, RedisController redis, EventRegister eventRegister, 
+    public ChooseGroupCallback(string callback, MemoryController controller, RedisController redis, EventRegister eventRegister, 
         string nextNextCallback, string backCourse, bool saveAsName = false, bool saveRedis = true) : base(callback) {
-        _userService = service;
+        _memoryController = controller;
         _nextCallback = nextNextCallback;
         _backCourse = backCourse;
         _saveAsName = saveAsName;
@@ -47,7 +47,7 @@ public class ChooseGroupCallback : BotCommand {
     }
 
     public async Task<InlineKeyboardMarkup> GetInlineKeyboard(short course) {
-        var allGroups = await _userService.GetCourseGroups(course);
+        var allGroups = await _memoryController.GetCourseGroups(course);
         
         allGroups = allGroups.OrderBy(c => {
             var parts = c.name.Split('-');

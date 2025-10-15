@@ -9,6 +9,7 @@ public record ServiceConfiguration {
 public record Services {
     public ServiceConfiguration DiskayMemory { get; init; } = new();
     public ServiceConfiguration Redis { get; init; } = new();
+    public ServiceConfiguration ScheduleService { get; init; } = new();
 }
 public class Configuration {
     public Services Services { get; init; } = new();

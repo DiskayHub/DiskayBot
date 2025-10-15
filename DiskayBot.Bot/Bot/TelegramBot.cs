@@ -1,6 +1,6 @@
 using System.Net;
+using DiskayBot.API.Clients;
 using DiskayBot.API.Exeptions;
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.CallBacks.Account;
 using DiskayBot.Bot.Bot.CallBacks.Data;
@@ -14,11 +14,14 @@ using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
+using DiskayBot.Services.ScheduleService;
+using DiskayBot.Services.ScheduleService.Interfaces;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using IScheduleController = DiskayBot.Services.ScheduleService.Interfaces.IScheduleController;
 
 namespace DiskayBot.Bot.Bot;
 
@@ -31,7 +34,7 @@ public class TelegramBot {
     private readonly CommandRegister _commandRegister;
     private readonly EventRegister _eventRegister;
     private readonly EventCreator _eventCreator;
-    public TelegramBot(string botToken, RedisController redis, UserService userService, ScheduleService scheduleService, 
+    public TelegramBot(string botToken, RedisController redis, MemoryController memoryController, IScheduleController scheduleController, 
         ILogger<TelegramBot> logger, ILoggerFactory loggerFactory) {
         
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -39,33 +42,31 @@ public class TelegramBot {
         
         _eventCreator = new EventCreator();
         _eventRegister = new EventRegister();
-
-        var userController = new UserController(redis, userService);
         
         var commands = new List<ICommand>() {
             new StartCommand("/start"),
-            new CheckStatusCommand("/check_bot_status", userService, scheduleService),
-            new ShowProfileCommand("/show_profile", userController),
-            new FastScheduleCommand("/disky", userController, scheduleService, "updateSchedule"),
-            new CheckSchedulesCommand("/check", userController, "checkGroup"),
-            new RegisterCommand("/create_account", userController, "chooseCourse"),
-            new SettingsCommand("/settings", userController),
+            new CheckStatusCommand("/check_bot_status", memoryController, scheduleController),
+            new ShowProfileCommand("/show_profile", memoryController),
+            new FastScheduleCommand("/disky", memoryController, scheduleController, "updateSchedule"),
+            new CheckSchedulesCommand("/check", memoryController, "checkGroup"),
+            new RegisterCommand("/create_account", memoryController, "chooseCourse"),
+            new SettingsCommand("/settings", memoryController),
             new AboutCommand("/about", "0.12-alfa"),
             
-            new UpdateSchedule("updateSchedule", userController, scheduleService),
+            new UpdateSchedule("updateSchedule", memoryController, scheduleController),
             
             new ChooseCourseCallBack("chooseCourse", "chooseGroup"),
-            new ChooseGroupCallback("chooseGroup", userService, redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),
+            new ChooseGroupCallback("chooseGroup", memoryController, redis, _eventRegister, "preCreateAccountOffer", "chooseCourse"),
             new PreCreateAccountOffer("preCreateAccountOffer", redis, "createAccount"),
-            new CreatingAccountCallback("createAccount", redis, userService),
+            new CreatingAccountCallback("createAccount", redis, memoryController),
             
-            new ChangeProfileDataCallback("changeProfileData", userController),
+            new ChangeProfileDataCallback("changeProfileData", memoryController),
             new ChooseCourseCallBack("changeCourse", "changeGroup"),
-            new ChooseGroupCallback("changeGroup", userService, redis, _eventRegister, "changingGroup", "changeCourse"),
-            new ChangingGroupCallback("changingGroup", redis, userController, userService),
+            new ChooseGroupCallback("changeGroup", memoryController, redis, _eventRegister, "changingGroup", "changeCourse"),
+            new ChangingGroupCallback("changingGroup", redis, memoryController),
             
-            new ChooseGroupCallback("checkGroup", userService, redis, _eventRegister, "checkingSchedule", "/check=edit", true, false),
-            new CheckScheduleCallback("checkingSchedule", scheduleService, redis, "checkGroup"),
+            new ChooseGroupCallback("checkGroup", memoryController, redis, _eventRegister, "checkingSchedule", "/check=edit", true, false),
+            new CheckScheduleCallback("checkingSchedule", scheduleController, redis, "checkGroup"),
         };
         
         _commandRegister = new CommandRegister(commands);

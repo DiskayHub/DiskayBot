@@ -1,9 +1,10 @@
-using DiskayBot.API.Services;
+using DiskayBot.API.Clients;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Messages;
+using DiskayBot.Services.ScheduleService.Interfaces;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
@@ -12,19 +13,19 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace DiskayBot.Bot.Bot.CallBacks.Schedule;
 
 public class UpdateSchedule : BotCommand {
-    private UserController _userController;
-    private ScheduleService _scheduleService;
+    private MemoryController _memoryController;
+    private IScheduleController _scheduleService;
     
-    public UpdateSchedule(string name, UserController userController, ScheduleService scheduleService) : base(name) {
-        _userController =  userController;
+    public UpdateSchedule(string name, MemoryController memoryController, IScheduleController scheduleService) : base(name) {
+        _memoryController =  memoryController;
         _scheduleService = scheduleService;
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
         var callbackEvent = (CallbackQueryUserEvent)evt;
-        var user = await _userController.GetUserData(evt.Chat.Id);
+        var user = await _memoryController.GetUser(evt.Chat.Id);
         if (user != null) {
-            var schedule = await _scheduleService.GetActualSchedule($"ИТ{user.group_name}");
+            var schedule = _scheduleService.GetActualSchedule($"ИТ{user.group_name}");
             if (schedule != null) {
                 try {
                     await bot.EditMessageText(

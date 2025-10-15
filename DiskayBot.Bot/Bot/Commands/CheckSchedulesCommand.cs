@@ -1,4 +1,3 @@
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;
@@ -10,17 +9,17 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace DiskayBot.Bot.Bot.Commands;
 
 public class CheckSchedulesCommand : BotCommand {
-    private readonly UserController _userController;
+    private readonly MemoryController _memoryController;
     private readonly string _nextCallback;
     
-    public CheckSchedulesCommand(string name, UserController userController, string nextCallback) : base(name) {
-        _userController = userController;
+    public CheckSchedulesCommand(string name, MemoryController memoryController, string nextCallback) : base(name) {
+        _memoryController = memoryController;
         _nextCallback = nextCallback;
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
         var messageText = "Проверить расписание 🔍\n\n*Diskay* покажет ближайшее расписание (поэтому смотри на дату)";
-        if (await _userController.IsAuthenticated(evt.UserId)) {
+        if (await _memoryController.UserIsAuthenticated(evt.UserId)) {
             try {
                 var callbackEvent = (CallbackQueryUserEvent)evt;
                 await bot.EditMessageText(

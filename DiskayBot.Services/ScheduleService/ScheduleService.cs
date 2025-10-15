@@ -1,6 +1,7 @@
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
+using DiskayBot.Services.ScheduleService.Components;
 using DiskayBot.Services.ScheduleService.Data;
 using DiskayBot.Services.ScheduleService.Events;
 using DiskayBot.Services.ScheduleService.Interfaces;
@@ -8,11 +9,12 @@ using Microsoft.Extensions.Logging;
 
 namespace DiskayBot.Services.ScheduleService;
 
-public class ScheduleService : IScheduleServiceEvents {
+public class ScheduleService : IScheduleServiceEvents, IScheduleService {
     private readonly IScheduleClient _client;
-    private readonly List<string> _allGroups;
     private readonly ILogger<ScheduleService> _logger;
-    public readonly ScheduleAnalyser Analyser;
+    private readonly List<string> _allGroups;
+    public readonly IScheduleAnalyser Analyser;
+    public readonly IScheduleController Controller;
     public WeekSchedule Schedule {get; set; }
     public event Action<UpdateScheduleEvent> OnScheduleUpdated;
     
@@ -27,6 +29,7 @@ public class ScheduleService : IScheduleServiceEvents {
         _logger = logger;
         Schedule = new WeekSchedule();
         Analyser = new ScheduleAnalyser(this, loggerFactory.CreateLogger<ScheduleAnalyser>());
+        Controller = new ScheduleController(this, loggerFactory.CreateLogger<ScheduleController>());
     }
 
     private async Task UpdateSchedules() {
@@ -48,27 +51,7 @@ public class ScheduleService : IScheduleServiceEvents {
         
         OnScheduleUpdated.Invoke(new  UpdateScheduleEvent(previosSchedule, scheduleUpdateEvent));
     }
-
-    public DaySchedule? GetActualSchedule(string groupName) {
-        _logger.LogInformation("Запрос на актуальное расписание");
-        var dateTimeNow = DateTime.Now;
-        
-        var weekSchedule = GetSchedule(groupName);
-        if (weekSchedule != null) {
-            foreach (var schedule in weekSchedule) {
-                if (schedule.date.Day == dateTimeNow.Day && schedule.items[^1].endTime > TimeOnly.FromDateTime(DateTime.Now)) {
-                    _logger.LogInformation(schedule.items[^1].endTime.ToString("hh:mm:ss"));
-                    return schedule;
-                }
-                if (schedule.date > DateOnly.FromDateTime(dateTimeNow)) {
-                    return schedule;
-                }
-            }
-        }
-        return null;
-    }
-
-    public List<DaySchedule>? GetSchedule(string groupName) {
+    public List<DaySchedule>? GetWeekSchedule(string groupName) {
         _logger.LogInformation($"Получаю расписание для группы: {groupName}...");
         Schedule.GroupsSchedule.TryGetValue(groupName, out var schedule);
         return schedule;
@@ -89,6 +72,8 @@ public class ScheduleService : IScheduleServiceEvents {
             _logger.LogError(ex, "Ошибка при отправке запроса к Schedule API!");
         }
     }
+
+    public WeekSchedule WeekSchedule { get; set; }
 
     public void RaiseOnScheduleUpdated(UpdateScheduleEvent e) {
         OnScheduleUpdated.Invoke(e);

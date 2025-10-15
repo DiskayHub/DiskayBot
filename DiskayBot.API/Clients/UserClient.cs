@@ -1,25 +1,23 @@
-using System;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Groups;
 using DiskayBot.API.Contracts.Service;
+using DiskayBot.API.Contracts.Users.GetUser;
 using DiskayBot.API.Contracts.Users.UpdateUser;
 using DiskayBot.API.Exeptions;
 using Microsoft.Extensions.Logging;
 
-namespace DiskayBot.API.Services;
+namespace DiskayBot.API.Clients;
 
-public class UserService{
+public class UserClient {
     private readonly HttpClient _client;
     private readonly string _baseUrl;
-    private readonly ILogger<UserService> _logger;
+    private readonly ILogger<UserClient> _logger;
     public string Name { get; }
 
-    public UserService(HttpClient client,  string baseUrl, string name, ILogger<UserService> logger) {
+    public UserClient(HttpClient client,  string baseUrl, string name, ILogger<UserClient> logger) {
         Name = name;
         _client = client;
         _baseUrl = baseUrl;
@@ -158,6 +156,19 @@ public class UserService{
         }
         
         _logger.LogCritical("Ошибка при обновлении пользователя!");
+        throw new ConnectionRefuseExeption(Name);
+    }
+
+    public async Task<List<TelegramUser>?> GetAllUsers() {
+        _logger.LogInformation("Получаю список всех пользователей");
+        var response = await _client.GetAsync($"{_baseUrl}/api/telegram_users");
+        if (response.IsSuccessStatusCode) {
+            var stringContent = await response.Content.ReadAsStringAsync();
+            var users = JsonSerializer.Deserialize<List<TelegramUser>>(stringContent);
+                _logger.LogInformation($"Пользователи получены, количество пользователей: {users.Count}");
+            return users;
+        }
+        _logger.LogCritical("Не удалось получить всех пользователей!");
         throw new ConnectionRefuseExeption(Name);
     }
 }

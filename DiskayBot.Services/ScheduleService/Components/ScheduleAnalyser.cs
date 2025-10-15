@@ -1,10 +1,9 @@
 using DiskayBot.API.Contracts;
-using DiskayBot.Services.ScheduleService.Data;
 using DiskayBot.Services.ScheduleService.Events;
 using DiskayBot.Services.ScheduleService.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace DiskayBot.Services.ScheduleService;
+namespace DiskayBot.Services.ScheduleService.Components;
 
 public class ScheduleAnalyser : IScheduleAnalyser {
     private readonly IScheduleServiceEvents _events;

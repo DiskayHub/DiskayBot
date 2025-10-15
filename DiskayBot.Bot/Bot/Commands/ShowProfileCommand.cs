@@ -1,4 +1,3 @@
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;
@@ -12,12 +11,12 @@ using BotCommand = DiskayBot.Bot.Abstractions.BotCommand;
 namespace DiskayBot.Bot.Bot.Commands;
 
 public class ShowProfileCommand : BotCommand {
-    private readonly UserController _userController;
-    public ShowProfileCommand(string name, UserController userController) : base(name)  {
-        _userController = userController;
+    private readonly MemoryController _memoryController;
+    public ShowProfileCommand(string name, MemoryController memoryController) : base(name)  {
+        _memoryController = memoryController;
     }
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-        var user = await _userController.GetUserData(evt.UserId);
+        var user = await _memoryController.GetUser(evt.UserId);
         if (user != null) {
             string result = MessageBuilder.ShowProfile(user);
             await bot.SendMessage(evt.Chat, result, ParseMode.Markdown);

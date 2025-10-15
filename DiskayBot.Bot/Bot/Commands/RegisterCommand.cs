@@ -1,4 +1,3 @@
-using DiskayBot.API.Services;
 using DiskayBot.Bot.Abstractions;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;
@@ -16,10 +15,10 @@ namespace DiskayBot.Bot.Bot.Commands;
 
 public class RegisterCommand : BotCommand {
     private readonly InlineKeyboardMarkup _keyboard;
-    private readonly UserController _userController;
+    private readonly MemoryController _memoryController;
 
-    public RegisterCommand(string name, UserController userController, string callback) : base(name) {
-        _userController = userController;
+    public RegisterCommand(string name, MemoryController memoryController, string callback) : base(name) {
+        _memoryController = memoryController;
 
         _keyboard = new InlineKeyboardMarkup(new InlineKeyboardButton[] {
             InlineKeyboardButton.WithCallbackData("Продолжить", callback) 
@@ -27,7 +26,7 @@ public class RegisterCommand : BotCommand {
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient botClient, CancellationToken token, UserEvent evt) {
-        if (!await _userController.IsAuthenticated(evt.UserId)) {
+        if (!await _memoryController.UserIsAuthenticated(evt.UserId)) {
             await botClient.SendMessage(
                 evt.Chat,
                 MessageBuilder.CreateAccount(),

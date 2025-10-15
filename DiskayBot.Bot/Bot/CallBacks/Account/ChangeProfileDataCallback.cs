@@ -9,14 +9,14 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace DiskayBot.Bot.Bot.CallBacks.Account;
 
 public class ChangeProfileDataCallback : BotCommand {
-    private readonly UserController _userController;
+    private readonly MemoryController _memoryController;
     
-    public ChangeProfileDataCallback(string name, UserController userController) : base(name) {
-        _userController = userController;
+    public ChangeProfileDataCallback(string name, MemoryController memoryController) : base(name) {
+        _memoryController = memoryController;
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-        var user = await _userController.GetUserData(evt.UserId);
+        var user = await _memoryController.GetUser(evt.UserId);
         if (user != null) {
             await bot.EditMessageText(
                 evt.Chat,

@@ -1,18 +1,17 @@
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Schedule;
-using DiskayBot.API.Contracts.Service;
 using DiskayBot.API.Exeptions;
+using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
-using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace DiskayBot.API.Services;
+namespace DiskayBot.API.Clients;
 
-public class ScheduleService {
+public class ScheduleClient : IScheduleClient {
     private readonly HttpClient _client;
     private readonly string _baseUrl;
     public readonly string Name;
-    public ScheduleService(HttpClient client, string base_url, string name) {
+    public ScheduleClient(HttpClient client, string base_url, string name) {
         _client = client;
         _baseUrl = base_url;
         Name = name;
@@ -31,6 +30,25 @@ public class ScheduleService {
         }
 
         throw new ConnectionRefuseExeption("CollegeAPI", "Сервер не отвечает, или отвечает, но не успешно");
+    }
+
+    public async Task<GroupWeekSchedule?> GetActualScheduleWeek(string groupName) {
+        var weekPeriod = TimeHelper.GetActualWeekPeriod();
+        var requestBody = DayScheduleRequest.Create(weekPeriod, groupName);
+
+        if (requestBody != null) {
+            var responseObject = await GetSchedule(requestBody);
+            if (responseObject != null) {
+                var days = ScheduleFormatter.FormatPeriod(responseObject, groupName);
+                var weekSchedule = new GroupWeekSchedule(
+                    WeekPeriod: weekPeriod,
+                    Schedule: days
+                );
+                return weekSchedule;
+            }
+            return null;
+        }
+        throw new Exception("Unable to determine schedule period");
     }
 
     public async Task<DaySchedule?> GetActualSchedule(string groupName) {

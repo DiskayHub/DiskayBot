@@ -10,14 +10,14 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace DiskayBot.Bot.Bot.Commands;
 
 public class SettingsCommand : BotCommand {
-    private readonly UserController _userController;
+    private readonly MemoryController _memoryController;
     
-    public SettingsCommand(string name, UserController userController) : base(name) {
-        _userController = userController;
+    public SettingsCommand(string name, MemoryController memoryController) : base(name) {
+        _memoryController = memoryController;
     }
 
     public override async Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt) {
-        if (await _userController.IsAuthenticated(evt.UserId)) {
+        if (await _memoryController.UserIsAuthenticated(evt.UserId)) {
             await bot.SendMessage(
                 evt.Chat,
                 "Настройки",

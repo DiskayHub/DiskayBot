@@ -1,10 +1,15 @@
-﻿using DiskayBot.API.Exeptions;
-using DiskayBot.API.Services;
+﻿using DiskayBot.API.Clients;
+using DiskayBot.API.Exeptions;
+using DiskayBot.API.Interfaces;
 using DiskayBot.Bot;
 using DiskayBot.Bot.Bot;
+using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Events;
 using DiskayBot.Redis;
+using DiskayBot.Services.ScheduleService;
+using DiskayBot.Services.ScheduleService.Components;
+using DiskayBot.Services.ScheduleService.Interfaces;
 using DotNetEnv;
 using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.Extensions.Configuration;
@@ -35,55 +40,74 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) => {
         var configuration = context.Configuration.GetSection("Configuration").Get<Configuration>();
 
+        if (configuration == null) {
+            throw new NullReferenceException($"{nameof(configuration)} not configured");
+        }
+
         Console.WriteLine("Текущая директория: " + Environment.CurrentDirectory);
-        Console.WriteLine($"REDIS: {configuration.Services.Redis.ToString()}");
-        Console.WriteLine($"DiskayMemory: {configuration.Services.DiskayMemory.ToString()}");
+        Console.WriteLine($"REDIS: {configuration.Services.Redis}");
+        Console.WriteLine($"DiskayMemory: {configuration.Services.DiskayMemory}");
+        Console.WriteLine($"ScheduleService: {configuration.Services.ScheduleService}");
+        
+        // HttpClient
+        services.AddSingleton<HttpClient>();
 
         // Кеширование - REDIS
         var redis = ConnectionMultiplexer.Connect($"{configuration.Services.Redis.url},abortConnect=false");
         if (redis.IsConnected) {
-            services.AddSingleton(redis.GetDatabase());
+            services.AddSingleton<RedisController>(sp => 
+                new RedisController(redis.GetDatabase(), sp.GetRequiredService<ILogger<RedisController>>())
+            );
         }
         else {
             throw new ConnectionRefuseExeption("redis", "Ошибка при подключении к redis");
         }
 
-        // HttpClient
-        services.AddSingleton<HttpClient>();
-
         // СТОРОННИЕ СЕРВИСЫ
 
         // DiskayMemory
-        services.AddSingleton<UserService>(sp =>
-            new UserService(
+        services.AddSingleton<UserClient>(sp =>
+            new UserClient(
                 sp.GetRequiredService<HttpClient>(),
                 configuration.Services.DiskayMemory.url,
                 "DiskayMemory",
-                sp.GetRequiredService<ILogger<UserService>>()
+                sp.GetRequiredService<ILogger<UserClient>>()
             )
+        );
+        services.AddSingleton<MemoryController>(sp => 
+            new MemoryController(sp.GetRequiredService<RedisController>(), sp.GetRequiredService<UserClient>())
         );
 
         // CollegeApi
-
-        services.AddSingleton<ScheduleService>(sp =>
-            new ScheduleService(
+        services.AddSingleton<IScheduleClient, ScheduleClient>(sp =>
+            new ScheduleClient(
                 sp.GetRequiredService<HttpClient>(),
-                "https://portal.it-college.ru",
+                configuration.Services.ScheduleService.url,
                 "College"
             )
         );
 
+        // ScheduleService
+        services.AddSingleton<ScheduleService>(sp => 
+            new ScheduleService(
+                client: sp.GetRequiredService<IScheduleClient>(),
+                logger: sp.GetRequiredService<ILogger<ScheduleService>>(),
+                loggerFactory: sp.GetRequiredService<ILoggerFactory>()
+            )
+        );
+
         if (botToken != null) {
-            services.AddSingleton<TelegramBot>(sp =>
-                new TelegramBot(
-                    botToken,
-                    new RedisController(sp.GetRequiredService<IDatabase>(),
-                        sp.GetRequiredService<ILogger<RedisController>>()),
-                    sp.GetRequiredService<UserService>(),
-                    sp.GetRequiredService<ScheduleService>(),
-                    sp.GetRequiredService<ILogger<TelegramBot>>(),
-                    sp.GetRequiredService<ILoggerFactory>()
-                )
+            services.AddSingleton<TelegramBot>(sp => {
+                    var scheduleService = sp.GetRequiredService<ScheduleService>();
+                    return new TelegramBot(
+                        botToken,
+                        sp.GetRequiredService<RedisController>(),
+                        sp.GetRequiredService<MemoryController>(),
+                        scheduleService.Controller,
+                        sp.GetRequiredService<ILogger<TelegramBot>>(),
+                        sp.GetRequiredService<ILoggerFactory>()
+                    );
+                }
             );
         }
     })
@@ -119,7 +143,19 @@ var host = Host.CreateDefaultBuilder(args)
 
 if (botToken != null) {
     var bot = host.Services.GetRequiredService<TelegramBot>();
-    await bot.Start();
+    var scheduleService = host.Services.GetRequiredService<ScheduleService>();
+    
+    var botThread = new Thread(async void () => {
+        await bot.Start();
+    });
+    var scheduleThread = new Thread(async void () => {
+        await scheduleService.Run(TimeSpan.FromMinutes(1));
+    });
+    
+    scheduleThread.Start();
+    botThread.Start();
+    
+    await Task.Delay(Timeout.Infinite);
 }
 else {
     Console.WriteLine("Токен отсутствует");
