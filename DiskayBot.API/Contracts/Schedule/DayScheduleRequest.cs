@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using DiskayBot.API.Modules;
 using DiskayBot.API.Validators;
 
 namespace DiskayBot.API.Contracts.Schedule;
@@ -33,6 +34,20 @@ public class DayScheduleRequest {
     }
     public static DayScheduleRequest? Create(string dayStart, string dayEnd, string group, string subgroup = "*") {
         var dayScheduleRequest = new DayScheduleRequest(dayStart, dayEnd, group, subgroup);
+        var result = new DayScheduleRequestValidator().Validate(dayScheduleRequest);
+        if (result.IsValid) {
+            return dayScheduleRequest;
+        }
+        return null;
+    }
+
+    public static DayScheduleRequest? Create(TimePeriod period, string group, string subgroup = "*") {
+        var dayScheduleRequest = new DayScheduleRequest(
+            dayStart: period.Start.ToString("yyyy-MM-dd"),
+            dayEnd: period.End.ToString("yyyy-MM-dd"),
+            group: group,
+            subgroup: subgroup
+        );
         var result = new DayScheduleRequestValidator().Validate(dayScheduleRequest);
         if (result.IsValid) {
             return dayScheduleRequest;
