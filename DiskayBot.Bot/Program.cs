@@ -4,21 +4,13 @@ using DiskayBot.API.Interfaces;
 using DiskayBot.Bot;
 using DiskayBot.Bot.Bot;
 using DiskayBot.Bot.Bot.Controllers;
-using DiskayBot.Bot.Bot.Exeptions;
-using DiskayBot.Bot.Events;
 using DiskayBot.Redis;
 using DiskayBot.Services.ScheduleService;
-using DiskayBot.Services.ScheduleService.Components;
-using DiskayBot.Services.ScheduleService.Interfaces;
 using DotNetEnv;
-using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Configuration;
-using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
@@ -31,8 +23,10 @@ string? botToken = Environment.GetEnvironmentVariable("BOT_TOKEN");
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) => {
-            var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../"));
-            config.SetBasePath(path);
+            if (Environment.CurrentDirectory != "/app") { // Если бот запущен не в Docker
+                var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../"));
+                config.SetBasePath(path);   
+            }
             config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
             config.AddEnvironmentVariables();
         }
