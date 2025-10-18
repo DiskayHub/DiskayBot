@@ -1,4 +1,5 @@
 using DiskayBot.API.Contracts;
+using DiskayBot.API.Exeptions;
 using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
 using DiskayBot.Services.ScheduleService.Components;
@@ -70,6 +71,18 @@ public class ScheduleService : IScheduleServiceEvents, IScheduleService {
         }
         catch (HttpRequestException ex) {
             _logger.LogError(ex, "Ошибка при отправке запроса к Schedule API!");
+        }
+
+        catch (ConnectionRefuseExeption ex) {
+            _logger.LogError(ex, "Потеряно соединение с сервером!");
+        }
+
+        catch (TaskCanceledException ex) {
+            _logger.LogError(ex, "Истекло время ожидания запроса на сервер!");
+        }
+
+        catch (Exception ex) {
+            _logger.LogError(ex, "Неизвестная ошибка при отправке запроса к Schedule API!");
         }
     }
 

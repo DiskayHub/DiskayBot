@@ -80,7 +80,8 @@ var host = Host.CreateDefaultBuilder(args)
             new ScheduleClient(
                 sp.GetRequiredService<HttpClient>(),
                 configuration.Services.ScheduleService.url,
-                "College"
+                "College",
+                sp.GetRequiredService<ILogger<ScheduleClient>>()
             )
         );
 
