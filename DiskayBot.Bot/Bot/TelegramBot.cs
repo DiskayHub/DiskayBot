@@ -77,7 +77,7 @@ public class TelegramBot {
 
     protected async Task OnUpdate(Update update) {
         cts_token.CancelAfter(2000);
-        _logger.LogInformation("Обработка запроса");
+        _logger.LogDebug("Обработка запроса");
 
         var evt = _eventCreator.Create(update);
 
@@ -88,7 +88,7 @@ public class TelegramBot {
             var @event = _eventRegister.GetEvent(evt.GetContent());
 
             if (@event != null) {
-                _logger.LogInformation($"Обнаружено событие: {@event.Name}");
+                _logger.LogDebug($"Обнаружено событие: {@event.Name}");
                 await @event.HandleAsync(evt, cts_token.Token);
             }
 

@@ -22,7 +22,7 @@ public class ScheduleAnalyser : IScheduleAnalyser {
     }
 
     public void UpdateAnalysis(UpdateScheduleEvent updatedEvent) {
-        _logger.LogInformation("Проверка соответствия с прошлым расписанием..");
+        _logger.LogDebug("Проверка соответствия с прошлым расписанием..");
         var previosWeekSchedule = updatedEvent.previosWeekSchedule;
         var currentWeekSchedule = updatedEvent.currentWeekSchedule;
         
@@ -42,12 +42,13 @@ public class ScheduleAnalyser : IScheduleAnalyser {
             }
         }
         else {
-            _logger.LogInformation("Нет исходных данных, анализ сравнения невозможен");
+            _logger.LogDebug("Нет исходных данных, анализ сравнения невозможен");
         }
     }
 
     public void Listen() {
         _logger.LogInformation("Подключаю обработчики для анализа расписания...");
         _events.OnScheduleUpdated += Analyse;
+        _logger.LogInformation("ScheduleAnalyser слушает сервис расписания");
     }
 }
