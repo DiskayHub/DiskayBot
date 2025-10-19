@@ -64,25 +64,21 @@ public class ScheduleService : IScheduleServiceEvents, IScheduleService {
         
         var timer = new PeriodicTimer(delay);
         try {
-            await UpdateSchedules();
-            if (await timer.WaitForNextTickAsync()) {
-                await UpdateSchedules();
+            do {
+                try {
+                    await UpdateSchedules();
+                }
+                catch (HttpRequestException ex) {
+                    _logger.LogError(ex, "Ошибка при запросе к Schedule API");
+                }
+                catch (Exception ex) {
+                    _logger.LogError(ex, "Необработанное исключение при обновлении расписания!");
+                }
             }
+            while (await timer.WaitForNextTickAsync());
         }
-        catch (HttpRequestException ex) {
-            _logger.LogError(ex, "Ошибка при отправке запроса к Schedule API!");
-        }
-
-        catch (ConnectionRefuseExeption ex) {
-            _logger.LogError(ex, "Потеряно соединение с сервером!");
-        }
-
-        catch (TaskCanceledException ex) {
-            _logger.LogError(ex, "Истекло время ожидания запроса на сервер!");
-        }
-
-        catch (Exception ex) {
-            _logger.LogError(ex, "Неизвестная ошибка при отправке запроса к Schedule API!");
+        finally {
+            _logger.LogCritical("Сервис ScheduleService остановлен!");
         }
     }
 
