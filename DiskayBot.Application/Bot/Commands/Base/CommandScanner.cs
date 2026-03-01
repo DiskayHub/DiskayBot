@@ -4,16 +4,20 @@ using DiskayBot.Bot.Interfaces;
 
 namespace DiskayBot.Bot.Bot.Commands.Base;
 
-/// <summary>
-/// Достаёт все комманды с аттрибутом CommandName
-/// </summary>
 public static class CommandScanner {
     public static IEnumerable<CommandDescriptor> Scan(Assembly assembly) {
-        return assembly.GetTypes()
-            .Where(t =>
-                !t.IsAbstract &&
-                typeof(IBaseCommand).IsAssignableFrom(t) &&
-                t.GetCustomAttribute<CommandNameAttribute>() != null)
-            .Select(t => new CommandDescriptor(t));
+        var types = assembly.GetTypes()
+            .Where(t => !t.IsAbstract && typeof(IBaseCommand).IsAssignableFrom(t));
+
+        foreach (var type in types) {
+            var hasCommand = type.GetCustomAttribute<CommandNameAttribute>() != null;
+            var hasCallback = type.GetCustomAttribute<CallbackNameAttribute>() != null;
+
+            if (hasCommand)
+                yield return new CommandDescriptor(type, HandlerKind.Command);
+
+            if (hasCallback)
+                yield return new CommandDescriptor(type, HandlerKind.Callback);
+        }
     }
 }

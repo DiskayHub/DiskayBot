@@ -9,7 +9,6 @@ namespace DiskayBot.Bot.Bot;
 
 public class TelegramBot {
     private TelegramBotClient _bot;
-    private CancellationTokenSource cts_token = new();
     private ILogger<TelegramBot> _logger;
     private ILoggerFactory _loggerFactory;
     private readonly BotMiddleware _middleware;
@@ -23,13 +22,13 @@ public class TelegramBot {
     }
 
     protected async Task OnUpdate(Update update) {
-        cts_token.CancelAfter(2000);
+        CancellationTokenSource ctsToken = new(TimeSpan.FromSeconds(5));
         
         var cts = new BotContext {
             Bot = _bot,
             Event = EventCreator.Create(update)
         };
-        await _middleware.InvokeAsync(cts, cts_token.Token);
+        await _middleware.InvokeAsync(cts, ctsToken.Token);
     }
 
     public async Task Start() {

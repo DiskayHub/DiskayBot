@@ -1,8 +1,7 @@
-using DiskayBot.Bot.Abstractions;
-using Telegram.Bot;
+using DiskayBot.Bot.DTOs;
 
 namespace DiskayBot.Bot.Interfaces;
 
 public interface IBaseCommand {
-    public Task ExecuteAsync(ITelegramBotClient bot, CancellationToken token, UserEvent evt);
+    Task ExecuteAsync(BotContext ctx, CancellationToken token);
 }

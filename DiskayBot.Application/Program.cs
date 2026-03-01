@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using DiskayBot.API.Clients;
 using DiskayBot.API.Exeptions;
 using DiskayBot.API.Interfaces;
@@ -7,10 +7,10 @@ using DiskayBot.Bot.Bot;
 using DiskayBot.Bot.Bot.Commands.Base;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Registers;
-using DiskayBot.Bot.Interfaces;
 using DiskayBot.Bot.Middleware;
 using DiskayBot.Redis;
 using DiskayBot.Services.ScheduleService;
+using DiskayBot.Services.ScheduleService.Interfaces;
 using DotNetEnv;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,14 +25,14 @@ var WORK_DIRECTORY = "../../../"; //Путь относительно bin/Debug/
 Env.Load(WORK_DIRECTORY);
 
 string? botToken = Environment.GetEnvironmentVariable("BOT_TOKEN");
-bool isDocker = Environment.CurrentDirectory == "/app"; 
+bool isDocker = Environment.CurrentDirectory == "/app";
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) => {
             if (!isDocker) { // Если бот запущен не в Docker
                 Console.WriteLine("DEFAULT CONFIGURATION");
                 var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../"));
-                config.SetBasePath(path);   
+                config.SetBasePath(path);
             }
             else {
                 Console.WriteLine("DOCKER CONFIGURATION");
@@ -43,21 +43,21 @@ var host = Host.CreateDefaultBuilder(args)
     )
     .ConfigureServices((context, services) => {
         Console.WriteLine("Текущая директория: " + Environment.CurrentDirectory);
-        
+
         var configurator = new Configurator(context.Configuration, isDocker);
         var configuration = configurator.GetConfiguration();
-        
+
         Console.WriteLine($"REDIS: {configuration.Services.Redis}");
         Console.WriteLine($"DiskayMemory: {configuration.Services.DiskayMemory}");
         Console.WriteLine($"ScheduleService: {configuration.Services.ScheduleService}");
-        
+
         // HttpClient
         services.AddSingleton<HttpClient>();
 
         // Кеширование - REDIS
         var redis = ConnectionMultiplexer.Connect($"{configuration.Services.Redis.url},abortConnect=false");
         if (redis.IsConnected) {
-            services.AddSingleton<RedisController>(sp => 
+            services.AddSingleton<RedisController>(sp =>
                 new RedisController(redis.GetDatabase(), sp.GetRequiredService<ILogger<RedisController>>())
             );
         }
@@ -76,7 +76,7 @@ var host = Host.CreateDefaultBuilder(args)
                 sp.GetRequiredService<ILogger<UserClient>>()
             )
         );
-        services.AddSingleton<MemoryController>(sp => 
+        services.AddSingleton<MemoryController>(sp =>
             new MemoryController(sp.GetRequiredService<RedisController>(), sp.GetRequiredService<UserClient>())
         );
 
@@ -91,25 +91,31 @@ var host = Host.CreateDefaultBuilder(args)
         );
 
         // ScheduleService
-        services.AddSingleton<ScheduleService>(sp => 
+        services.AddSingleton<ScheduleService>(sp =>
             new ScheduleService(
                 client: sp.GetRequiredService<IScheduleClient>(),
                 logger: sp.GetRequiredService<ILogger<ScheduleService>>(),
                 loggerFactory: sp.GetRequiredService<ILoggerFactory>()
             )
         );
-        
-        var descriptors = CommandScanner.Scan(Assembly.GetExecutingAssembly());
-        foreach (var descriptor in descriptors) {
-            services.AddTransient(descriptor.CommandType);
+
+        // IScheduleController — из ScheduleService.Controller
+        services.AddSingleton<IScheduleController>(sp =>
+            sp.GetRequiredService<ScheduleService>().Controller
+        );
+
+        // Сканирование и регистрация команд/каллбеков
+        var descriptors = CommandScanner.Scan(Assembly.GetExecutingAssembly()).ToList();
+
+        var commandTypes = descriptors.Select(d => d.CommandType).Distinct();
+        foreach (var type in commandTypes) {
+            services.AddTransient(type);
         }
-        
+
         services.AddSingleton(new CommandRegistry(descriptors));
         services.AddSingleton<CommandDispatcher>();
 
-        services.AddSingleton<BotMiddleware>(sp => {
-            return new BotMiddleware(sp.GetRequiredService<ILogger<BotMiddleware>>(), sp.GetRequiredService<CommandDispatcher>());
-        });
+        services.AddSingleton<BotMiddleware>();
 
         if (botToken != null) {
             services.AddSingleton<TelegramBot>(sp => {
@@ -157,17 +163,17 @@ var host = Host.CreateDefaultBuilder(args)
 if (botToken != null) {
     var bot = host.Services.GetRequiredService<TelegramBot>();
     var scheduleService = host.Services.GetRequiredService<ScheduleService>();
-    
+
     var botThread = new Thread(async void () => {
         await bot.Start();
     });
     var scheduleThread = new Thread(async void () => {
         await scheduleService.Run(TimeSpan.FromMinutes(1));
     });
-    
+
     scheduleThread.Start();
     botThread.Start();
-    
+
     await Task.Delay(Timeout.Infinite);
 }
 else {

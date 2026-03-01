@@ -7,11 +7,10 @@ using Telegram.Bot.Types.Enums;
 
 namespace DiskayBot.Bot.Bot.Commands;
 
-[CommandName("/about")]
-public class AboutCommand : IBaseCommand {
-    private readonly string Version = "0.12-alfa";
-
+[CommandName("/show_profile", AccessLevel.User)]
+public class ShowProfileCommand : IBaseCommand {
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
-        await ctx.Bot.SendMessage(ctx.Event.Chat, MessageBuilder.AboutBot(Version), ParseMode.Markdown, cancellationToken: token);
+        var result = MessageBuilder.ShowProfile(ctx.User!);
+        await ctx.Bot.SendMessage(ctx.Event.Chat, result, ParseMode.Markdown, cancellationToken: token);
     }
 }
