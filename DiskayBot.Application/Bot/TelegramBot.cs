@@ -1,23 +1,26 @@
+using DiskayBot.Bot.Bot.Options;
 using DiskayBot.Bot.DTOs;
 using DiskayBot.Bot.Events.Base;
 using DiskayBot.Bot.Middleware;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace DiskayBot.Bot.Bot;
 
-public class TelegramBot {
+public class TelegramBot : BackgroundService {
     private TelegramBotClient _bot;
     private ILogger<TelegramBot> _logger;
     private ILoggerFactory _loggerFactory;
     private readonly BotMiddleware _middleware;
     
-    public TelegramBot(string botToken, BotMiddleware middleware, ILogger<TelegramBot> logger, ILoggerFactory loggerFactory) {
+    public TelegramBot(IOptions<TelegramBotOptions> options, BotMiddleware middleware, ILogger<TelegramBot> logger, ILoggerFactory loggerFactory) {
         _logger = logger;
         _loggerFactory = loggerFactory;
         _middleware = middleware;
-        _bot = new TelegramBotClient(botToken);
+        _bot = new TelegramBotClient(options.Value.Token);
         _bot.OnUpdate += OnUpdate;
     }
 
@@ -31,7 +34,7 @@ public class TelegramBot {
         await _middleware.InvokeAsync(cts, ctsToken.Token);
     }
 
-    public async Task Start() {
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         try{
             _logger.LogInformation("Запуск Telegram бота..");
             var botInfo = await _bot.GetMe();

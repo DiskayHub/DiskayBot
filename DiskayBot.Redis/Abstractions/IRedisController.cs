@@ -11,4 +11,8 @@ public interface IRedisController {
     public Task SaveDataHash(string key, HashEntry[] hash, TimeSpan timeout);
     public Task<HashEntry[]?> GetDataHash(string key);
     public Task DeleteData(string key);
+
+    public Task SaveSchedule(DaySchedule daySchedule);
+    public Task<DaySchedule?> GetSchedule(string dayName);
+    public Task<bool> CheckScheduleEquals(DaySchedule daySchedule);
 }

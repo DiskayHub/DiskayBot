@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
+    <PackageReference Include="MediatR" Version="12.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
@@ -22,7 +23,6 @@
   <ItemGroup>
     <ProjectReference Include="..\DiskayBot.API\DiskayBot.API.csproj" />
     <ProjectReference Include="..\DiskayBot.Redis\DiskayBot.Redis.csproj" />
-    <ProjectReference Include="..\DiskayBot.Services\DiskayBot.Services.csproj" />
   </ItemGroup>
 
   <ItemGroup>

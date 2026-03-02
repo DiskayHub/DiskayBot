@@ -4,16 +4,15 @@ using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Groups;
 using DiskayBot.API.Contracts.Service;
 using DiskayBot.API.Contracts.Users.UpdateUser;
-using DiskayBot.Redis;
-using Telegram.Bot.Types;
+using DiskayBot.Redis.Abstractions;
 
 namespace DiskayBot.Bot.Bot.Controllers;
 
 public class MemoryController {
-    private readonly RedisController _redis;
+    private readonly IRedisController _redis;
     private readonly UserClient _userClient;
     
-    public MemoryController(RedisController redis, UserClient userClient) {
+    public MemoryController(IRedisController redis, UserClient userClient) {
         _redis = redis;
         _userClient = userClient;
     }
