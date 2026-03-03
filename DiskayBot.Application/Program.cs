@@ -11,6 +11,7 @@ using DiskayBot.Bot.Extensions;
 using DiskayBot.Bot.Middleware;
 using DiskayBot.Bot.ScheduleService;
 using DiskayBot.Bot.ScheduleService.Options;
+using DiskayBot.Bot.ScheduleService.Worker;
 using DiskayBot.Redis;
 using DiskayBot.Redis.Abstractions;
 using DotNetEnv;
@@ -34,13 +35,13 @@ var host = Host.CreateDefaultBuilder(args)
 
         Console.WriteLine($"REDIS: {configuration["Redis:ConnectionString"]}");
         Console.WriteLine($"DiskayMemory: {configuration["UserClient:url"]}");
-        Console.WriteLine($"ScheduleService: {configuration["ScheduleClient:url"]}");
+        Console.WriteLine($"ScheduleBackgroundService: {configuration["ScheduleClient:url"]}");
         
         services.Configure<TelegramBotOptions>(configuration.GetSection("TelegramBot"));
         services.Configure<UserClientOptions>(configuration.GetSection("UserClient"));
         services.Configure<ScheduleClientOptions>(configuration.GetSection("ScheduleClient"));
         services.Configure<ScheduleServiceOptions>(configuration.GetSection("ScheduleService"));
-
+        
         // HttpClient
         services.AddHttpClient();
 
@@ -60,6 +61,7 @@ var host = Host.CreateDefaultBuilder(args)
 
         // Schedule
         services.AddSingleton<IScheduleClient, ScheduleClient>();
+        services.AddSingleton<IScheduleController, ScheduleController>();
 
         // Сканирование и регистрация команд/каллбеков
         var descriptors = CommandScanner.Scan(Assembly.GetExecutingAssembly()).ToList();
@@ -78,7 +80,7 @@ var host = Host.CreateDefaultBuilder(args)
         });
 
         services.AddHostedService<TelegramBot>();
-        services.AddHostedService<ScheduleService>();
+        services.AddHostedService<ScheduleBackgroundService>();
     })
     .AddLogging(WORK_DIRECTORY)
     .Build();
