@@ -113,7 +113,7 @@ public class MessageBuilder {
         {
             if (item.startTime > new TimeOnly(12, 0) & lanchTime != true) {
                 lanchTime = true;
-                sb.AppendLine("------<b>ОБЕДЕННОЕ ВРЕМЯ</b>------");
+                sb.AppendLine("<code>————————— ОБЕД —————————</code>");
                 sb.AppendLine();
             }
 
@@ -150,7 +150,7 @@ public class MessageBuilder {
             if (item.subGroups != null && item.subGroups.Count > 0) {
                 foreach (var subGroup in item.subGroups)
                 {
-                    var subInfo = $" - <code>{subGroup.subGroup}</code> : {subGroup.name}";
+                    var subInfo = $"  · <code>{subGroup.subGroup}</code> : {subGroup.name}";
                     if (!string.IsNullOrEmpty(subGroup.roomName)) {
                         subInfo += $" → {subGroup.roomName}";
                     }
