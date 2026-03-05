@@ -4,6 +4,7 @@ using DiskayBot.Bot.DTOs;
 using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Redis;
+using DiskayBot.Redis.Abstractions;
 using StackExchange.Redis;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -14,9 +15,9 @@ namespace DiskayBot.Bot.Bot.Callbacks.Account;
 [CallbackName("changeGroup", AccessLevel.User)]
 public class ChangeGroupCallback : IBaseCommand {
     private readonly MemoryController _memoryController;
-    private readonly RedisController _redis;
+    private readonly IRedisController _redis;
 
-    public ChangeGroupCallback(MemoryController memoryController, RedisController redis) {
+    public ChangeGroupCallback(MemoryController memoryController, IRedisController redis) {
         _memoryController = memoryController;
         _redis = redis;
     }

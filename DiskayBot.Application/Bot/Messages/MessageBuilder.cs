@@ -1,19 +1,45 @@
-using System.Globalization;
 using System.Text;
 using DiskayBot.API.Contracts;
-using DiskayBot.API.Contracts.Schedule;
 using DiskayBot.API.Contracts.Service;
 
-namespace DiskayBot.Bot.Messages;
+namespace DiskayBot.Bot.Bot.Messages;
 
 public class MessageBuilder {
     public static string StartMessage() {
-        return
-            "*Привет, я Diskay* 💫\n\n" +
-            "Твой бот-помощник в *Колледже Цифровых Технологий*.\n\n" +
-            "📆 *Расписание*\n" +
-            " *-->* */disky* Покажу актуальное расписание для тебя.\n" +
-            " *-->* */check* Покажу актуальное расписание для любой группы.";
+        var sb = new StringBuilder();
+
+        sb.AppendLine("<b>Привет, студент! Я Diskay</b> 💫");
+        sb.AppendLine();
+    
+        sb.AppendLine("Моя задача — упростить тебе жизнь в мелочах, на которые ты регулярно тратишь время.");
+        sb.AppendLine();
+        sb.AppendLine("Я не привязан к конкретной группе и доступен каждому в <b>КЦТ</b>. ✨");
+        sb.AppendLine();
+
+        sb.AppendLine("<b>Что я предлагаю:</b>");
+        sb.AppendLine(" <b>--></b> Моментальное актуальное расписание.");
+        sb.AppendLine(" <b>--></b> Расписание на любой день недели.");
+        sb.AppendLine(" <b>-->️</b> Стабильность: я храню данные у себя.");
+        sb.AppendLine(" <b>--></b> Открытый код: буду рад вашим решениям.");
+        sb.AppendLine();
+
+        sb.AppendLine("<b>Твои команды:</b>");
+        sb.Append(" <b>/disky</b>").AppendLine(" — расписание твоей группы");
+        sb.Append(" <b>/check</b>").AppendLine(" — проверить другие группы");
+        sb.AppendLine();
+
+        sb.AppendLine("<b>Настройки и статус:</b>");
+        sb.Append(" <b>/settings</b>").AppendLine(" — твой профиль");
+        sb.Append(" <b>/show_profile</b>").AppendLine(" — настройки");
+        sb.Append(" <b>/check_bot_status</b>").AppendLine(" — статус сервисов");
+        sb.AppendLine(" <b>/about</b> — от разработчика (версия и changelog)");
+        sb.AppendLine();
+
+        sb.AppendLine("<i>Буду рад любой поддержке и предложениям. Расписание — это только начало!</i>🚀");
+        sb.AppendLine();
+        sb.AppendLine("С уважением, <b>Diskay</b>.");
+
+        return sb.ToString();
     }
 
     public static string CheckBotStatus(List<PingResponse?> response) {
@@ -161,13 +187,26 @@ public class MessageBuilder {
 
     public static string AboutBot(string version) {
         var sb = new StringBuilder();
-        sb.AppendLine("*Привет, друг!* 💫\n");
-        sb.AppendLine("Сейчас всё активно развивается — появляются новые идеи и изменения, и это вдохновляет.\n");
-        sb.AppendLine("*Diskay* не является большим проектом, но ориентирован именно на нас с вами - обывателей колледжа.\n");
-        sb.AppendLine("Огромное спасибо всем, кто поддерживает данный проект!\n");
+    
+        sb.AppendLine("<b>О проекте Diskay</b> 💫");
+        sb.AppendLine();
+
+        sb.AppendLine("<blockquote>\"Вы все ещё здесь?...\"</blockquote>");
+        sb.AppendLine();
+
+        sb.AppendLine("<b>Последние изменения:</b>");
+        sb.AppendLine(" • Кнопки навигации в <code>/disky</code>");
+        sb.AppendLine(" • Редизайн отображения пар");
+        sb.AppendLine(" • Обновлённое приветствие");
+
+        sb.AppendLine();
+        // Прячем ссылку в текст «GitHub» или «Исходный код»
+        sb.AppendLine("📂 <a href=\"https://github.com/DiskayHub/DiskayBot\">Исходный код проекта</a>");
+        sb.AppendLine("👨‍💻 <i>Разработчик: @Laxerem</i>");
+        sb.AppendLine();
         
-        sb.AppendLine($"*Версия: {version}* ✨");
-        
+        sb.AppendLine($"<b>Версия:</b> <code>{version}</code>"); 
+
         return sb.ToString();
     }
 }

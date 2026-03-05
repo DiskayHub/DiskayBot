@@ -1,8 +1,8 @@
 using DiskayBot.Bot.Attributes;
 using DiskayBot.Bot.Bot.Controllers;
+using DiskayBot.Bot.Bot.Messages;
 using DiskayBot.Bot.DTOs;
 using DiskayBot.Bot.Interfaces;
-using DiskayBot.Bot.Messages;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
