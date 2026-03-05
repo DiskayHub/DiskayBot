@@ -4,6 +4,7 @@ using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Bot.Messages;
 using DiskayBot.Redis;
+using DiskayBot.Redis.Abstractions;
 using StackExchange.Redis;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -13,9 +14,9 @@ namespace DiskayBot.Bot.Bot.Callbacks.Data;
 
 [CallbackName("preCreateAccountOffer")]
 public class PreCreateAccountOfferCallback : IBaseCommand {
-    private readonly RedisController _redis;
+    private readonly IRedisController _redis;
 
-    public PreCreateAccountOfferCallback(RedisController redis) {
+    public PreCreateAccountOfferCallback(IRedisController redis) {
         _redis = redis;
     }
 

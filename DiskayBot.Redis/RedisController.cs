@@ -1,10 +1,8 @@
-using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json;
 using DiskayBot.API.Contracts;
 using DiskayBot.Redis.Abstractions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace DiskayBot.Redis;
@@ -24,8 +22,8 @@ public class RedisController : IRedisController {
         return Convert.ToHexString(SHA256.HashData(freshJsonBytes));
     }
 
-    private string GetScheduleKey(DaySchedule schedule) {
-        return schedule.date.ToString("dddd", CultureInfo.InvariantCulture).ToLower();
+    private string GetDateKey(DaySchedule schedule) {
+        return schedule.date.ToString("dd.MM.yyyy");
     }
 
     public async Task SaveUser(string key, UserData data, TimeSpan timeout) {
@@ -131,11 +129,11 @@ public class RedisController : IRedisController {
         _logger.LogInformation("Сохранение расписания в кэш..");
         try {
             var json = JsonSerializer.Serialize(daySchedule);
-            var dayOfWeek = GetScheduleKey(daySchedule);
-            await _redis.StringSetAsync($"{dayOfWeek}:hash", GetScheduleHash(daySchedule), TimeSpan.FromDays(3));
-            await _redis.StringSetAsync($"{dayOfWeek}:data", json, TimeSpan.FromDays(3));
-            
-            _logger.LogDebug($"Расписание для '{dayOfWeek}' сохранено в кэш");
+            var dateKey = GetDateKey(daySchedule);
+            await _redis.StringSetAsync($"{dateKey}:{daySchedule.mainGroup}:hash", GetScheduleHash(daySchedule), TimeSpan.FromDays(3));
+            await _redis.StringSetAsync($"{dateKey}:{daySchedule.mainGroup}:data", json, TimeSpan.FromDays(3));
+
+            _logger.LogDebug($"Расписание для '{dateKey}' сохранено в кэш");
         }
         catch (Exception e) {
             _logger.LogCritical(e, "Ошибка сохранения расписания в кэш!");
@@ -143,10 +141,11 @@ public class RedisController : IRedisController {
         }
     }
 
-    public async Task<DaySchedule?> GetSchedule(string dayName) {
+    public async Task<DaySchedule?> GetSchedule(string groupName, DateOnly date) {
         _logger.LogInformation("Получение расписания из кэша..");
+        var dateKey = date.ToString("dd.MM.yyyy");
         try {
-            var key = $"{dayName}:data";
+            var key = $"{dateKey}:{groupName}:data";
             var data = await _redis.StringGetAsync(key);
 
             if (data.IsNullOrEmpty) {
@@ -164,7 +163,8 @@ public class RedisController : IRedisController {
     }
 
     public async Task<bool> CheckScheduleEquals(DaySchedule daySchedule) {
-        var result = await _redis.StringGetAsync($"{GetScheduleKey(daySchedule)}:hash");
+        var dateKey = GetDateKey(daySchedule);
+        var result = await _redis.StringGetAsync($"{dateKey}:{daySchedule.mainGroup}:hash");
         return result == GetScheduleHash(daySchedule);
     }
 }

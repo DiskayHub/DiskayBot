@@ -74,11 +74,10 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton(new CommandRegistry(descriptors));
         services.AddSingleton<CommandDispatcher>();
         services.AddSingleton<BotMiddleware>();
-
         services.AddMediatR(cfg => {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
         });
-
+        
         services.AddHostedService<TelegramBot>();
         services.AddHostedService<ScheduleBackgroundService>();
     })

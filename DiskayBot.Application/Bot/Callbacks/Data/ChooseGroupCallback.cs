@@ -4,6 +4,7 @@ using DiskayBot.Bot.DTOs;
 using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Redis;
+using DiskayBot.Redis.Abstractions;
 using StackExchange.Redis;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -14,9 +15,9 @@ namespace DiskayBot.Bot.Bot.Callbacks.Data;
 [CallbackName("chooseGroup")]
 public class ChooseGroupCallback : IBaseCommand {
     private readonly MemoryController _memoryController;
-    private readonly RedisController _redis;
+    private readonly IRedisController _redis;
 
-    public ChooseGroupCallback(MemoryController memoryController, RedisController redis) {
+    public ChooseGroupCallback(MemoryController memoryController, IRedisController redis) {
         _memoryController = memoryController;
         _redis = redis;
     }

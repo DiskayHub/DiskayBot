@@ -1,4 +1,5 @@
 using DiskayBot.Bot.Attributes;
+using DiskayBot.Bot.Bot.KeyBoard.Scripts;
 using DiskayBot.Bot.DTOs;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Bot.Messages;
@@ -21,10 +22,7 @@ public class FastScheduleCommand : IBaseCommand {
         var daySchedule = await _schedule.GetActualSchedule($"ИТ{ctx.User!.group_name}");
         if (daySchedule != null) {
             var result = MessageBuilder.ShowSchedule(daySchedule);
-            var keyboard = new InlineKeyboardMarkup(new[] {
-                InlineKeyboardButton.WithCallbackData("Обновить 💫", "updateSchedule")
-            });
-            await ctx.Bot.SendMessage(ctx.Event.Chat, result, ParseMode.Html, replyMarkup: keyboard, cancellationToken: token);
+            await ctx.Bot.SendMessage(ctx.Event.Chat, result, ParseMode.Html, replyMarkup: GlobalKeyboard.GetScheduleNavigatorKeyboard(daySchedule.date), cancellationToken: token);
         }
         else {
             await ctx.Bot.SendMessage(ctx.Event.Chat, "Не получилось отправить ближайшее расписание", ParseMode.Markdown, cancellationToken: token);

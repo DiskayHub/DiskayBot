@@ -11,7 +11,7 @@ namespace DiskayBot.Bot.Bot.Commands;
 public class CheckSchedulesCommand : IBaseCommand {
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
         var messageText = "Проверить расписание 🔍\n\n*Diskay* покажет ближайшее расписание (поэтому смотри на дату)";
-        var keyboard = AllCoursesKeyboard.GetKeyboard("checkGroup");
+        var keyboard = GlobalKeyboard.GetCoursesKeyboard("checkGroup");
         await ctx.Bot.SendMessage(ctx.Event.Chat, messageText, ParseMode.Markdown, replyMarkup: keyboard, cancellationToken: token);
     }
 }

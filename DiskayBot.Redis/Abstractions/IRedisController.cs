@@ -13,6 +13,6 @@ public interface IRedisController {
     public Task DeleteData(string key);
 
     public Task SaveSchedule(DaySchedule daySchedule);
-    public Task<DaySchedule?> GetSchedule(string dayName);
+    public Task<DaySchedule?> GetSchedule(string groupName, DateOnly date);
     public Task<bool> CheckScheduleEquals(DaySchedule daySchedule);
 }

@@ -4,6 +4,7 @@ using DiskayBot.Bot.DTOs;
 using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Redis;
+using DiskayBot.Redis.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
@@ -11,10 +12,10 @@ namespace DiskayBot.Bot.Bot.Callbacks.Data;
 
 [CallbackName("createAccount")]
 public class CreatingAccountCallback : IBaseCommand {
-    private readonly RedisController _redis;
+    private readonly IRedisController _redis;
     private readonly MemoryController _memoryController;
 
-    public CreatingAccountCallback(RedisController redis, MemoryController memoryController) {
+    public CreatingAccountCallback(IRedisController redis, MemoryController memoryController) {
         _redis = redis;
         _memoryController = memoryController;
     }

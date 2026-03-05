@@ -1,4 +1,5 @@
 using DiskayBot.Bot.Attributes;
+using DiskayBot.Bot.Bot.KeyBoard.Scripts;
 using DiskayBot.Bot.DTOs;
 using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
@@ -24,14 +25,11 @@ public class UpdateScheduleCallback : IBaseCommand {
         var schedule = await _scheduleService.GetActualSchedule($"ИТ{ctx.User!.group_name}");
         if (schedule != null) {
             try {
-                var keyboard = new InlineKeyboardMarkup(new[] {
-                    InlineKeyboardButton.WithCallbackData("Обновить 💫", "updateSchedule")
-                });
                 await ctx.Bot.EditMessageText(
                     ctx.Event.Chat,
                     ctx.Event.MessageId,
                     MessageBuilder.ShowSchedule(schedule),
-                    replyMarkup: keyboard,
+                    replyMarkup: GlobalKeyboard.GetScheduleNavigatorKeyboard(schedule.date),
                     parseMode: ParseMode.Html,
                     cancellationToken: token
                 );

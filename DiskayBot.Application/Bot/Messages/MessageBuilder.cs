@@ -84,83 +84,78 @@ public class MessageBuilder {
 
     public static string ShowSchedule(DaySchedule daySchedule, bool timeDescription = true) {
         var sb = new StringBuilder();
-        var timeNow = TimeOnly.FromDateTime(DateTime.Now);
-        
-        var lanchTime = false;
-        var isToday = daySchedule.date == DateOnly.FromDateTime(DateTime.Now);
-        
-        CultureInfo russianCulture = new CultureInfo("ru-RU");
-        TextInfo textInfo = russianCulture.TextInfo;
-        
-        string dayName = textInfo.ToTitleCase(daySchedule.date.ToString("ddd", russianCulture));
-        
-        if (timeDescription && (daySchedule.date != DateOnly.FromDateTime(DateTime.Now))) {
-            sb.AppendLine("Отдыхай, но будь готов.\nВот ближайшее расписание 👇");
-            sb.AppendLine();
-        }
-        
-        sb.AppendLine($"📅 <b>{daySchedule.date:dd.MM.yyyy}</b> {dayName} | 🫡 <b>{daySchedule.mainGroup}</b>");
+        var now = DateTime.Now;
+        var today = DateOnly.FromDateTime(now);
+        var timeNow = TimeOnly.FromDateTime(now);
+        var isToday = daySchedule.date == today;
+
+        string moon = (timeDescription, daySchedule.date.CompareTo(today)) switch {
+            (true, > 0) => "🌅",
+            (true, 0)   => "☀️",
+            _           => "🌑"
+        };
+        sb.AppendLine($"📅 <b>{daySchedule.date:dd.MM.yyyy}</b> | 🫡 <b>{daySchedule.mainGroup}</b> | {moon}");
+        sb.AppendLine("<code>——————————————————————————</code>");
+
+        DayOfWeek[] dowOrder = [
+            DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+            DayOfWeek.Thursday, DayOfWeek.Friday
+        ];
+        string[] dayLabels = ["ПН", "ВТ", "СР", "ЧТ", "ПТ"];
+        int MonIndex(DayOfWeek d) => d == DayOfWeek.Sunday ? 6 : (int)d - 1;
+        int todayIdx = MonIndex(now.DayOfWeek);
+        var scheduleDow = daySchedule.date.DayOfWeek;
+
+        var weekRow = string.Join("   |   ", dayLabels.Select((label, i) => {
+            string formatted = MonIndex(dowOrder[i]) < todayIdx ? $"<s>{label}</s>" : label;
+            return dowOrder[i] == scheduleDow ? $"<u>[{formatted}]</u>" : formatted;
+        }));
+        sb.AppendLine(weekRow);
         sb.AppendLine();
-    
+
         if (daySchedule.items == null || daySchedule.items.Count == 0) {
             sb.AppendLine("🎉 <b>Пар нет! Отдыхаем!</b>");
             return sb.ToString();
         }
-    
-        var sortedItems = daySchedule.items.OrderBy(x => x.startTime).ToList();
-    
-        foreach (var item in sortedItems)
-        {
-            if (item.startTime > new TimeOnly(12, 0) & lanchTime != true) {
-                lanchTime = true;
-                sb.AppendLine("<code>————————— ОБЕД —————————</code>");
+
+        var lunchTime = false;
+        foreach (var item in daySchedule.items.OrderBy(x => x.startTime)) {
+            if (!lunchTime && item.startTime > new TimeOnly(12, 0)) {
+                lunchTime = true;
+                sb.AppendLine("<code>—————————— ОБЕД ——————————</code>");
                 sb.AppendLine();
             }
 
-            if (timeNow >= new TimeOnly(12, 15) && timeNow < new TimeOnly(13, 0)) {
-                
-            }
+            bool lessonCurrent = isToday && timeNow >= item.startTime && timeNow < item.endTime;
+            bool lessonDone    = daySchedule.date < today || (isToday && timeNow > item.endTime);
 
-            if (timeNow >= item.startTime && timeNow < item.endTime && isToday) {
-                sb.AppendLine($"👉 <b>{item.startTime:HH:mm}-{item.endTime:HH:mm}</b>");
-                sb.AppendLine($"Предмет: <b>{item.name}</b>");   
-            }
-            else if (timeNow > item.endTime && isToday) {
-                sb.AppendLine($"✅ <del>{item.startTime:HH:mm}-{item.endTime:HH:mm}</del>");
-                sb.AppendLine($"Предмет: <b>{item.name}</b>");   
-            }
-            else {
-                sb.AppendLine($"--> <b>{item.startTime:HH:mm}-{item.endTime:HH:mm}</b>");
-                sb.AppendLine($"Предмет: <b>{item.name}</b>");   
-            }
-        
+            string timePrefix = (lessonCurrent, lessonDone) switch {
+                (true, _) => $"👉 <b>{item.startTime:HH:mm}-{item.endTime:HH:mm}</b>",
+                (_, true) => $"✅ <del>{item.startTime:HH:mm}-{item.endTime:HH:mm}</del>",
+                _         => $"--> <b>{item.startTime:HH:mm}-{item.endTime:HH:mm}</b>"
+            };
+            sb.AppendLine(timePrefix);
+            sb.AppendLine($"Предмет: <b>{item.name}</b>");
+
             if (!string.IsNullOrEmpty(item.description))
-            {
                 sb.AppendLine($"Описание: <b>{item.description}</b>");
-            }
-        
-            if (!string.IsNullOrEmpty(item.room_name) && item.subGroups == null) {
-                sb.AppendLine($"Аудитория: <b>{item.room_name}</b>");
-            }
-            else if (item.subGroups == null) {
-                sb.AppendLine($"Аудитория не указана 🤨");
-            }
-            
-        
-            if (item.subGroups != null && item.subGroups.Count > 0) {
-                foreach (var subGroup in item.subGroups)
-                {
-                    var subInfo = $"  · <code>{subGroup.subGroup}</code> : {subGroup.name}";
-                    if (!string.IsNullOrEmpty(subGroup.roomName)) {
-                        subInfo += $" → {subGroup.roomName}";
-                    }
+
+            if (item.subGroups is { Count: > 0 }) {
+                foreach (var sg in item.subGroups) {
+                    var subInfo = $"  · <code>{sg.subGroup}</code> : {sg.name}";
+                    if (!string.IsNullOrEmpty(sg.roomName))
+                        subInfo += $" → {sg.roomName}";
                     sb.AppendLine(subInfo);
                 }
+            } else {
+                sb.AppendLine(string.IsNullOrEmpty(item.room_name)
+                    ? "Аудитория не указана 🤨"
+                    : $"Аудитория: <b>{item.room_name}</b>");
             }
-        
+
             sb.AppendLine();
         }
-    
+
         return sb.ToString();
     }
 
