@@ -3,6 +3,7 @@ using DiskayBot.API.Clients;
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Groups;
 using DiskayBot.API.Contracts.Service;
+using DiskayBot.API.Contracts.Users.GetUser;
 using DiskayBot.API.Contracts.Users.UpdateUser;
 using DiskayBot.Redis.Abstractions;
 
@@ -52,5 +53,9 @@ public class MemoryController {
 
     public async Task<PingResponse?> PingService() {
         return await _userClient.PingService();
+    }
+
+    public async Task<List<TelegramUser>?> GetAllUsers() {
+        return await _userClient.GetAllUsers();
     }
 }
