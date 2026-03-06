@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using DiskayBot.API.Contracts;
 using DiskayBot.Redis.Abstractions;
@@ -10,11 +11,19 @@ public class RedisController : IRedisController {
     private readonly IDatabase _redis;
     private readonly ILogger<RedisController> _logger;
     
-    public RedisController(IDatabase redis, ILogger<RedisController> logger) {
-        _redis = redis;
+    public RedisController(IConnectionMultiplexer multiplexer, ILogger<RedisController> logger) {
+        _redis = multiplexer.GetDatabase();
         _logger = logger;
-        
         _logger.LogInformation("RedisController - инициализация");
+    }
+
+    private string GetScheduleHash(DaySchedule schedule) {
+        var freshJsonBytes = JsonSerializer.SerializeToUtf8Bytes(schedule);
+        return Convert.ToHexString(SHA256.HashData(freshJsonBytes));
+    }
+
+    private string GetDateKey(DaySchedule schedule) {
+        return schedule.date.ToString("dd.MM.yyyy");
     }
 
     public async Task SaveUser(string key, UserData data, TimeSpan timeout) {
@@ -105,15 +114,57 @@ public class RedisController : IRedisController {
     }
 
     public async Task DeleteData(string key) {
-        var datakey = $"{key}:process";
-        _logger.LogInformation($"Идёт процесс удаления данных по ключу: {datakey}");
+        var dataKey = $"{key}:process";
+        _logger.LogInformation($"Идёт процесс удаления данных по ключу: {dataKey}");
         try {
-            await _redis.KeyDeleteAsync(datakey);
+            await _redis.KeyDeleteAsync(dataKey);
             _logger.LogInformation("Данные из кэша удалены");
         }
         catch (Exception e){
             _logger.LogCritical(e,"Ошибка при удалении данных из кэша!");
             throw new Exception(e.Message);
         }
+    }
+    public async Task SaveSchedule(DaySchedule daySchedule) {
+        _logger.LogInformation("Сохранение расписания в кэш..");
+        try {
+            var json = JsonSerializer.Serialize(daySchedule);
+            var dateKey = GetDateKey(daySchedule);
+            await _redis.StringSetAsync($"{dateKey}:{daySchedule.mainGroup}:hash", GetScheduleHash(daySchedule), TimeSpan.FromDays(3));
+            await _redis.StringSetAsync($"{dateKey}:{daySchedule.mainGroup}:data", json, TimeSpan.FromDays(3));
+
+            _logger.LogDebug($"Расписание для '{dateKey}' сохранено в кэш");
+        }
+        catch (Exception e) {
+            _logger.LogCritical(e, "Ошибка сохранения расписания в кэш!");
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task<DaySchedule?> GetSchedule(string groupName, DateOnly date) {
+        _logger.LogInformation("Получение расписания из кэша..");
+        var dateKey = date.ToString("dd.MM.yyyy");
+        try {
+            var key = $"{dateKey}:{groupName}:data";
+            var data = await _redis.StringGetAsync(key);
+
+            if (data.IsNullOrEmpty) {
+                _logger.LogDebug($"Расписание по ключу '{key}' не найдено в кэше");
+                return null;
+            }
+
+            _logger.LogDebug($"Расписание по ключу '{key}' найдено, десериализация..");
+            return JsonSerializer.Deserialize<DaySchedule>(data!);
+        }
+        catch (Exception e) {
+            _logger.LogCritical(e, "Ошибка получения расписания из кэша!");
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task<bool> CheckScheduleEquals(DaySchedule daySchedule) {
+        var dateKey = GetDateKey(daySchedule);
+        var result = await _redis.StringGetAsync($"{dateKey}:{daySchedule.mainGroup}:hash");
+        return result == GetScheduleHash(daySchedule);
     }
 }

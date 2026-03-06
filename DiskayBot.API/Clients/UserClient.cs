@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using DiskayBot.API.Clients.Options;
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Groups;
 using DiskayBot.API.Contracts.Service;
@@ -8,28 +9,27 @@ using DiskayBot.API.Contracts.Users.GetUser;
 using DiskayBot.API.Contracts.Users.UpdateUser;
 using DiskayBot.API.Exeptions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DiskayBot.API.Clients;
 
 public class UserClient {
     private readonly HttpClient _client;
-    private readonly string _baseUrl;
+    private readonly UserClientOptions _options;
     private readonly ILogger<UserClient> _logger;
-    public string Name { get; }
 
-    public UserClient(HttpClient client,  string baseUrl, string name, ILogger<UserClient> logger) {
-        Name = name;
+    public UserClient(HttpClient client, IOptions<UserClientOptions> options, ILogger<UserClient> logger) {
         _client = client;
-        _baseUrl = baseUrl;
+        _options = options.Value;
         _logger = logger;
     }
 
     public async Task<PingResponse?> PingService() {
         try{
             _logger.LogInformation("Проверка статуса сервиса DiskayMemory");
-            _logger.LogDebug($"Отправка запроса по url: {_baseUrl}/api/service/ping");
+            _logger.LogDebug($"Отправка запроса по url: {_options.url}/api/service/ping");
             
-            var response = await _client.GetAsync($"{_baseUrl}/api/service/ping");
+            var response = await _client.GetAsync($"{_options.url}/api/service/ping");
 
             if (response.IsSuccessStatusCode){
                 _logger.LogInformation("Проверка статуса сервисов завершена");
@@ -43,7 +43,7 @@ public class UserClient {
         catch (HttpRequestException){
             _logger.LogCritical("Обращение к сервису DiskayMemory завершилось с ошибкой!");
             _logger.LogDebug("Не удлалось сделать подключится к сервису DiskayMemory, отправляю статус с проблемой");
-            return PingResponse.CreateDefault(Name);
+            return PingResponse.CreateDefault(_options.name);
         }
     }
 
@@ -54,7 +54,7 @@ public class UserClient {
             group_id = groupId
         });
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-        var response = await _client.PostAsync($"{_baseUrl}/api/diskay/telegram_user", content);
+        var response = await _client.PostAsync($"{_options.url}/api/diskay/telegram_user", content);
         
         Console.WriteLine(response.RequestMessage);
         if (response.IsSuccessStatusCode) {
@@ -71,7 +71,7 @@ public class UserClient {
         });
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
         _logger.LogDebug("Отправка запрос на сервер");
-        HttpResponseMessage response = await _client.GetAsync($"{_baseUrl}/api/telegram_users/{userId}");
+        HttpResponseMessage response = await _client.GetAsync($"{_options.url}/api/telegram_users/{userId}");
 
         if (response.IsSuccessStatusCode) {
             _logger.LogInformation($"Пользователь прошёл авторизацию");
@@ -87,14 +87,14 @@ public class UserClient {
         }
         
         _logger.LogCritical("Ошибка при авторизации!");
-        throw new ConnectionRefuseExeption(Name);
+        throw new ConnectionRefuseExeption(_options.name);
     }
 
     public async Task<List<GroupResponse>?> GetAllGroups() {
         _logger.LogInformation("Получаю все существующие группы");
         
-        _logger.LogDebug($"Отправка запроса по url: {_baseUrl}/api/groups");
-        HttpResponseMessage response = await _client.GetAsync($"{_baseUrl}/api/groups");
+        _logger.LogDebug($"Отправка запроса по url: {_options.url}/api/groups");
+        HttpResponseMessage response = await _client.GetAsync($"{_options.url}/api/groups");
         
         if (response.IsSuccessStatusCode) {
             _logger.LogInformation("Ответ от DiskayMemory получен");
@@ -111,15 +111,15 @@ public class UserClient {
         }
         
         _logger.LogCritical("Ошибка при получении групп!");
-        throw new ConnectionRefuseExeption(Name);
+        throw new ConnectionRefuseExeption(_options.name);
     }
 
     public async Task<List<GroupResponse>?> GetCourseGroups(int course) {
         _logger.LogInformation($"Получение групп по курсу: {course}");
-        _logger.LogDebug($"Отправка запроса по url: {_baseUrl}/api/groups/{course}");
+        _logger.LogDebug($"Отправка запроса по url: {_options.url}/api/groups/{course}");
         
         HttpResponseMessage response =
-            await _client.GetAsync($"{_baseUrl}/api/groups/{course}");
+            await _client.GetAsync($"{_options.url}/api/groups/{course}");
         if (response.IsSuccessStatusCode){
             _logger.LogInformation("Ответ от DiskayMemory получен");
             _logger.LogDebug("Дессериализация строки от сервера");
@@ -132,7 +132,7 @@ public class UserClient {
         }
 
         _logger.LogCritical($"Ошибка при получении групп по номеру курса!");
-        throw new ConnectionRefuseExeption(Name);
+        throw new ConnectionRefuseExeption(_options.name);
     }
 
     public async Task<HttpStatusCode> UpdateUser(long userId, UpdateUserRequest requestBody) {
@@ -141,8 +141,8 @@ public class UserClient {
         var jsonString = JsonSerializer.Serialize(requestBody);
         var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
         
-        _logger.LogDebug($"Отправка запроса по url: {_baseUrl}/api/telegram_users/{userId}");
-        var response = await _client.PutAsync($"{_baseUrl}/api/telegram_users/{userId}", content);
+        _logger.LogDebug($"Отправка запроса по url: {_options.url}/api/telegram_users/{userId}");
+        var response = await _client.PutAsync($"{_options.url}/api/telegram_users/{userId}", content);
 
         if (response.IsSuccessStatusCode) {
             _logger.LogInformation($"Пользователь обновлён! Новая группа пользователя: {requestBody.group_id}");
@@ -156,12 +156,12 @@ public class UserClient {
         }
         
         _logger.LogCritical("Ошибка при обновлении пользователя!");
-        throw new ConnectionRefuseExeption(Name);
+        throw new ConnectionRefuseExeption(_options.name);
     }
 
     public async Task<List<TelegramUser>?> GetAllUsers() {
         _logger.LogInformation("Получаю список всех пользователей");
-        var response = await _client.GetAsync($"{_baseUrl}/api/telegram_users");
+        var response = await _client.GetAsync($"{_options.url}/api/telegram_users");
         if (response.IsSuccessStatusCode) {
             var stringContent = await response.Content.ReadAsStringAsync();
             var users = JsonSerializer.Deserialize<List<TelegramUser>>(stringContent);
@@ -169,6 +169,6 @@ public class UserClient {
             return users;
         }
         _logger.LogCritical("Не удалось получить всех пользователей!");
-        throw new ConnectionRefuseExeption(Name);
+        throw new ConnectionRefuseExeption(_options.name);
     }
 }

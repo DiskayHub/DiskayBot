@@ -3,15 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot", "DiskayBot.Bot\DiskayBot.Bot.csproj", "{D27133F8-6FB2-43B2-A06D-8409C3A668B0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot.Application", "DiskayBot.Application\DiskayBot.Application.csproj", "{D27133F8-6FB2-43B2-A06D-8409C3A668B0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot.API", "DiskayBot.API\DiskayBot.API.csproj", "{997259AC-A1D1-4DFC-A651-BFDE0E544738}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot.Redis", "DiskayBot.Redis\DiskayBot.Redis.csproj", "{C92DCA25-4329-43C7-A989-CEA678282D7A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot.Tests", "DiskayBot.Tests\DiskayBot.Tests.csproj", "{91424465-04DF-49B8-94FB-AED0288C9E2E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskayBot.Services", "DiskayBot.Services\DiskayBot.Services.csproj", "{D85465F5-02B1-4578-AEB0-864466FFCB6F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,10 +33,6 @@ Global
 		{91424465-04DF-49B8-94FB-AED0288C9E2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91424465-04DF-49B8-94FB-AED0288C9E2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91424465-04DF-49B8-94FB-AED0288C9E2E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D85465F5-02B1-4578-AEB0-864466FFCB6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D85465F5-02B1-4578-AEB0-864466FFCB6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D85465F5-02B1-4578-AEB0-864466FFCB6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D85465F5-02B1-4578-AEB0-864466FFCB6F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
