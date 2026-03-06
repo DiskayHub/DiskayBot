@@ -6,6 +6,7 @@ using DiskayBot.Bot.Bot;
 using DiskayBot.Bot.Bot.Commands.Base;
 using DiskayBot.Bot.Bot.Controllers;
 using DiskayBot.Bot.Bot.Options;
+
 using DiskayBot.Bot.Bot.Registers;
 using DiskayBot.Bot.Extensions;
 using DiskayBot.Bot.Middleware;
@@ -38,6 +39,7 @@ var host = Host.CreateDefaultBuilder(args)
         Console.WriteLine($"ScheduleBackgroundService: {configuration["ScheduleClient:url"]}");
         
         services.Configure<TelegramBotOptions>(configuration.GetSection("TelegramBot"));
+        services.Configure<AdminOptions>(configuration.GetSection("Admin"));
         services.Configure<UserClientOptions>(configuration.GetSection("UserClient"));
         services.Configure<ScheduleClientOptions>(configuration.GetSection("ScheduleClient"));
         services.Configure<ScheduleServiceOptions>(configuration.GetSection("ScheduleService"));

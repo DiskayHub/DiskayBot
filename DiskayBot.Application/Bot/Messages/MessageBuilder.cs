@@ -185,6 +185,24 @@ public class MessageBuilder {
         return sb.ToString();
     }
 
+    public static string NewsPreview(string text) {
+        var sb = new StringBuilder();
+        sb.AppendLine("📢 <b>Предпросмотр рассылки</b>");
+        sb.AppendLine();
+        sb.AppendLine(text);
+        sb.AppendLine();
+        sb.AppendLine("<i>Разослать всем зарегистрированным пользователям?</i>");
+        return sb.ToString();
+    }
+
+    public static string NewsText(string text) {
+        var sb = new StringBuilder();
+        sb.AppendLine("<b>Новости от Diskay</b> ✨");
+        sb.AppendLine();
+        sb.AppendLine(text);
+        return sb.ToString();
+    }
+
     public static string AboutBot(string version) {
         var sb = new StringBuilder();
     

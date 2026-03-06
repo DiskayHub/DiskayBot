@@ -30,7 +30,7 @@ public class CheckScheduleCallback : IBaseCommand {
                 await ctx.Bot.EditMessageText(
                     ctx.Event.Chat,
                     ctx.Event.MessageId,
-                    MessageBuilder.ShowSchedule(schedule, false),
+                    MessageBuilder.ShowSchedule(schedule),
                     replyMarkup: keyboard,
                     parseMode: ParseMode.Html,
                     cancellationToken: token

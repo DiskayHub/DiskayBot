@@ -171,4 +171,17 @@ public class UserClient {
         _logger.LogCritical("Не удалось получить всех пользователей!");
         throw new ConnectionRefuseExeption(_options.name);
     }
+
+    public async Task<List<TelegramUser>?> GetNotifyUsers() {
+        _logger.LogInformation("Получаю список пользователей, подписанных на уведомления");
+        var response = await _client.GetAsync($"{_options.url}/api/telegram_users/notify");
+        if (response.IsSuccessStatusCode) {
+            var stringContent = await response.Content.ReadAsStringAsync();
+            var users = JsonSerializer.Deserialize<List<TelegramUser>>(stringContent);
+            _logger.LogDebug($"Пользователи получены, количество: {users?.Count}");
+            return users;
+        }
+        _logger.LogCritical("Не удалось получить пользователей для уведомлений!");
+        throw new ConnectionRefuseExeption(_options.name);
+    }
 }

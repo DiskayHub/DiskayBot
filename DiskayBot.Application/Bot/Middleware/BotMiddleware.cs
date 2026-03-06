@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
+
 namespace DiskayBot.Bot.Middleware;
 
 public class BotMiddleware {
@@ -25,6 +26,14 @@ public class BotMiddleware {
         try {
             botContext.User = await _memoryController.GetUser(botContext.Event.UserId);
             await _commandDispatcher.DispatchAsync(botContext, cancellationToken);
+        }
+        catch (NotAdminException) {
+            await botContext.Bot.SendMessage(
+                    botContext.Event.Chat, 
+                $"Ты думал я настолько глуп? ☠️ \n<i>*Презрительный взгляд на <b>{botContext.Event.Username}</b>..</i>",
+                ParseMode.Html,
+                cancellationToken: cancellationToken
+            );
         }
         catch (NotAuthorizatedExeption) {
             await botContext.Bot.SendMessage(

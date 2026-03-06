@@ -25,15 +25,20 @@ public class ScheduleBackgroundService : BackgroundService {
     }
     private async Task UpdateSchedule() {
         foreach (var group in _options.allGroups) {
-            var freshWeekSchedule = await _scheduleClient.GetActualScheduleWeek(group);
-            if (freshWeekSchedule != null) {
-                foreach (var freshDaySchedule in freshWeekSchedule.Schedule) {
-                    var pastScheduleIsActual = await _redis.CheckScheduleEquals(freshDaySchedule);
-                    if (pastScheduleIsActual == false) {
-                        await _mediator.Publish(new ScheduleUpdatedEvent(freshDaySchedule));
-                        await _redis.SaveSchedule(freshDaySchedule);
+            try {
+                var freshWeekSchedule = await _scheduleClient.GetActualScheduleWeek(group);
+                if (freshWeekSchedule != null) {
+                    foreach (var freshDaySchedule in freshWeekSchedule.Schedule) {
+                        var pastScheduleIsActual = await _redis.CheckScheduleEquals(freshDaySchedule);
+                        if (pastScheduleIsActual == false) {
+                            await _mediator.Publish(new ScheduleUpdatedEvent(freshDaySchedule));
+                            await _redis.SaveSchedule(freshDaySchedule);
+                        }
                     }
-                }   
+                }
+            }
+            catch (Exception ex) {
+                _logger.LogError(ex, "Ошибка обновления расписания для группы '{Group}'", group);
             }
         }
     }
@@ -41,16 +46,10 @@ public class ScheduleBackgroundService : BackgroundService {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         _logger.LogDebug($"Таймаут запросов: {_options.updateTimeout}");
         var timer = new PeriodicTimer(TimeSpan.FromSeconds(_options.updateTimeout));
-        try {
-            do {
-                _logger.LogDebug("Обновление расписания...");
-                await UpdateSchedule();
-                _logger.LogInformation("Расписание обновленно");
-            }
-            while (await timer.WaitForNextTickAsync(stoppingToken));
-        }
-        catch (Exception ex) {
-            _logger.LogError($"Необработанное исключение при обновлении расписания: {ex.Message}");
-        }
+        do {
+            _logger.LogDebug("Обновление расписания...");
+            await UpdateSchedule();
+            _logger.LogInformation("Расписание обновленно");
+        } while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 }

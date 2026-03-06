@@ -30,7 +30,8 @@ public class ChangingGroupCallback : IBaseCommand {
                 group_id: Guid.Parse(groupId),
                 eng_group: null,
                 sub_group: null,
-                prof_group: null
+                prof_group: null,
+                notify: null
             );
             var request = await _memoryController.UpdateUser(ctx.Event.UserId, requestBody);
             if (request == HttpStatusCode.OK) {
