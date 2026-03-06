@@ -58,4 +58,8 @@ public class MemoryController {
     public async Task<List<TelegramUser>?> GetAllUsers() {
         return await _userClient.GetAllUsers();
     }
+
+    public async Task<List<TelegramUser>?> GetNotifyUsers() {
+        return await _userClient.GetNotifyUsers();
+    }
 }

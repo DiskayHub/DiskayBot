@@ -29,7 +29,7 @@ public class ConfirmNewsCallback : IBaseCommand {
         }
 
         var newsText = hash.FirstOrDefault(h => h.Name == "text").Value.ToString();
-        var users = await _memoryController.GetAllUsers();
+        var users = await _memoryController.GetNotifyUsers();
 
         var sent = 0;
         if (users != null) {
