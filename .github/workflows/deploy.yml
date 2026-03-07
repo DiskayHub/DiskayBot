@@ -1,0 +1,30 @@
+name: Deploy to server
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+    types:
+      - closed
+
+jobs:
+  deploy:
+    name: SSH Deploy
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Run deploy script
+        run: |
+          ssh -i ~/.ssh/id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "bash ~/projects/DiskayHub/deploy.sh"
