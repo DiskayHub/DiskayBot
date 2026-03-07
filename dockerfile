@@ -7,7 +7,6 @@ COPY DiskayBot.sln ./
 COPY DiskayBot.API/DiskayBot.API.csproj DiskayBot.API/
 COPY DiskayBot.Application/DiskayBot.Application.csproj DiskayBot.Application/
 COPY DiskayBot.Redis/DiskayBot.Redis.csproj DiskayBot.Redis/
-COPY DiskayBot.Services/DiskayBot.Services.csproj DiskayBot.Services/
 COPY DiskayBot.Tests/DiskayBot.Tests.csproj DiskayBot.Tests/
 
 # Восстановление зависимостей
@@ -26,4 +25,4 @@ WORKDIR /app
 ENV TZ=Asia/Yekaterinburg
 
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "DiskayBot.Bot.dll"]
+ENTRYPOINT ["dotnet", "DiskayBot.Application.dll"]
