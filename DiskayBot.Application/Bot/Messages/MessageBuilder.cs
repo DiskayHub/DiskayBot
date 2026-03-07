@@ -129,11 +129,12 @@ public class MessageBuilder {
         ];
         string[] dayLabels = ["ПН", "ВТ", "СР", "ЧТ", "ПТ"];
         int MonIndex(DayOfWeek d) => d == DayOfWeek.Sunday ? 6 : (int)d - 1;
-        int todayIdx = MonIndex(now.DayOfWeek);
         var scheduleDow = daySchedule.date.DayOfWeek;
+        var mondayOfScheduleWeek = daySchedule.date.AddDays(-MonIndex(scheduleDow));
 
         var weekRow = string.Join("   |   ", dayLabels.Select((label, i) => {
-            string formatted = MonIndex(dowOrder[i]) < todayIdx ? $"<s>{label}</s>" : label;
+            var dayDate = mondayOfScheduleWeek.AddDays(i);
+            string formatted = dayDate < today ? $"<s>{label}</s>" : label;
             return dowOrder[i] == scheduleDow ? $"<u>[{formatted}]</u>" : formatted;
         }));
         sb.AppendLine(weekRow);
