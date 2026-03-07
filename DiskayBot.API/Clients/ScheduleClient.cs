@@ -1,9 +1,12 @@
+using DiskayBot.API.Clients.Options;
 using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Schedule;
 using DiskayBot.API.Exeptions;
 using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DiskayBot.API.Clients;
@@ -11,20 +14,19 @@ namespace DiskayBot.API.Clients;
 public class ScheduleClient : IScheduleClient {
     private readonly HttpClient _client;
     private readonly ILogger<ScheduleClient> _logger;
-    private readonly string _baseUrl;
-    public readonly string Name;
-    public ScheduleClient(HttpClient client, string base_url, string name, ILogger<ScheduleClient> logger) {
+    private readonly ScheduleClientOptions _options;
+    
+    public ScheduleClient(HttpClient client, IOptions<ScheduleClientOptions> options, ILogger<ScheduleClient> logger) {
         _client = client;
-        _baseUrl = base_url;
+        _options = options.Value;
         _logger = logger;
-        Name = name;
     }
 
     private async Task<List<ApiItem>?> GetSchedule(DayScheduleRequest requestBody) {
         var ctsToken = new CancellationTokenSource();
         ctsToken.CancelAfter(TimeSpan.FromSeconds(10));
         
-        var response = await _client.PostAsync($"{_baseUrl}/schedule25.php", requestBody.GetStringContent(),
+        var response = await _client.PostAsync($"{_options.url}/schedule25.php", requestBody.GetStringContent(),
             ctsToken.Token);
 
         if (response.IsSuccessStatusCode) {

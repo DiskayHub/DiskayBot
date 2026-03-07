@@ -21,7 +21,7 @@ sudo apt-get install -y dotnet-sdk-9.0
 Create `.env` file in **DiskayBot.Bot**, and put your bot token:
 
 ```env
-BOT_TOKEN="YOUR_BOT_TOKEN"
+TelegramBot__Token="YOUR_BOT_TOKEN"
 ```
 
 ### 3. Configure the configuration
