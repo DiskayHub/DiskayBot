@@ -198,8 +198,6 @@ public class MessageBuilder {
 
     public static string NewsText(string text) {
         var sb = new StringBuilder();
-        sb.AppendLine("<b>Новости от Diskay</b> ✨");
-        sb.AppendLine();
         sb.AppendLine(text);
         return sb.ToString();
     }
