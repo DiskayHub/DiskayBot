@@ -46,6 +46,10 @@ public class ScheduleFormatter {
             daysResult[apiItem.Day].items.Add(dayItem);
         }
 
+        // сортируем предметы внутри каждого дня по времени начала
+        foreach (var day in daysResult.Values)
+            day.items.Sort((a, b) => a.startTime.CompareTo(b.startTime));
+
         // отдаём список по возрастанию дат
         return daysResult.Values.OrderBy(d => d.date).ToList();
     }
