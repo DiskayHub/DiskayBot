@@ -24,7 +24,7 @@ public class ScheduleClient : IScheduleClient {
 
     private async Task<List<ApiItem>?> GetSchedule(DayScheduleRequest requestBody) {
         var ctsToken = new CancellationTokenSource();
-        ctsToken.CancelAfter(TimeSpan.FromSeconds(10));
+        ctsToken.CancelAfter(TimeSpan.FromSeconds(30));
         
         var response = await _client.PostAsync($"{_options.url}/schedule25.php", requestBody.GetStringContent(),
             ctsToken.Token);
@@ -43,6 +43,25 @@ public class ScheduleClient : IScheduleClient {
 
     public async Task<GroupWeekSchedule?> GetActualScheduleWeek(string groupName) {
         var weekPeriod = TimeHelper.GetActualWeekPeriod();
+        var requestBody = DayScheduleRequest.Create(weekPeriod, groupName);
+
+        if (requestBody != null) {
+            var responseObject = await GetSchedule(requestBody);
+            if (responseObject != null) {
+                var days = ScheduleFormatter.FormatPeriod(responseObject, groupName);
+                var weekSchedule = new GroupWeekSchedule(
+                    WeekPeriod: weekPeriod,
+                    Schedule: days
+                );
+                return weekSchedule;
+            }
+            return null;
+        }
+        throw new Exception("Unable to determine schedule period");
+    }
+
+    public async Task<GroupWeekSchedule?> GetCurrentWeekSchedule(string groupName) {
+        var weekPeriod = TimeHelper.GetWeekPeriod(DateOnly.FromDateTime(DateTime.Now));
         var requestBody = DayScheduleRequest.Create(weekPeriod, groupName);
 
         if (requestBody != null) {

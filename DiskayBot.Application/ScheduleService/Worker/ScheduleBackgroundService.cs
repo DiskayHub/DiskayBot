@@ -26,7 +26,7 @@ public class ScheduleBackgroundService : BackgroundService {
     private async Task UpdateSchedule() {
         foreach (var group in _options.allGroups) {
             try {
-                var freshWeekSchedule = await _scheduleClient.GetActualScheduleWeek(group);
+                var freshWeekSchedule = await _scheduleClient.GetCurrentWeekSchedule(group);
                 if (freshWeekSchedule != null) {
                     foreach (var freshDaySchedule in freshWeekSchedule.Schedule) {
                         var pastScheduleIsActual = await _redis.CheckScheduleEquals(freshDaySchedule);

@@ -208,14 +208,9 @@ public class MessageBuilder {
         sb.AppendLine("<b>О проекте Diskay</b> 💫");
         sb.AppendLine();
 
-        sb.AppendLine("<blockquote>\"Вы все ещё здесь?...\"</blockquote>");
-        sb.AppendLine();
-
-        sb.AppendLine("<b>Последние изменения:</b>");
-        sb.AppendLine(" • Кнопки навигации в <code>/disky</code>");
-        sb.AppendLine(" • Редизайн отображения пар");
-        sb.AppendLine(" • Обновлённое приветствие");
-
+        sb.AppendLine("<b>Последние изменения (11.03.26):</b>");
+        sb.AppendLine(" • Исправлен баг с командой <b>/disky</b>, при котором показывалось не актуальное расписание для некоторых групп.");
+        sb.AppendLine(" • Исправлен баг с хранением расписания, из-за которого нельзя было посмотреть расписание прошедших дней.");
         sb.AppendLine();
         // Прячем ссылку в текст «GitHub» или «Исходный код»
         sb.AppendLine("📂 <a href=\"https://github.com/DiskayHub/DiskayBot\">Исходный код проекта</a>");

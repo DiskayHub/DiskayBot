@@ -4,4 +4,5 @@ namespace DiskayBot.API.Interfaces;
 
 public interface IScheduleClient {
     public Task<GroupWeekSchedule?> GetActualScheduleWeek(string groupName);
+    public Task<GroupWeekSchedule?> GetCurrentWeekSchedule(string groupName);
 }
