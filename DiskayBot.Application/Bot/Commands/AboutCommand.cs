@@ -9,7 +9,7 @@ namespace DiskayBot.Bot.Bot.Commands;
 
 [CommandName("/about")]
 public class AboutCommand : IBaseCommand {
-    private readonly string Version = "1.2.3-alfa";
+    private readonly string Version = "1.2.4-alfa";
 
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
         await ctx.Bot.SendMessage(ctx.Event.Chat, MessageBuilder.AboutBot(Version), ParseMode.Html, cancellationToken: token);

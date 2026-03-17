@@ -2,7 +2,9 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using DiskayBot.API.Contracts;
 using DiskayBot.Redis.Abstractions;
+using DiskayBot.Redis.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace DiskayBot.Redis;
@@ -10,11 +12,14 @@ namespace DiskayBot.Redis;
 public class RedisController : IRedisController {
     private readonly IDatabase _redis;
     private readonly ILogger<RedisController> _logger;
-    
-    public RedisController(IConnectionMultiplexer multiplexer, ILogger<RedisController> logger) {
+    private readonly RedisOptions _options;
+
+    public RedisController(IConnectionMultiplexer multiplexer, IOptions<RedisOptions> options, ILogger<RedisController> logger) {
         _redis = multiplexer.GetDatabase();
+        _options = options.Value;
         _logger = logger;
         _logger.LogInformation("RedisController - инициализация");
+        _logger.LogInformation($"Срок действия расписания (в днях): {_options.scheduleExpireDays}");
     }
 
     private string GetScheduleHash(DaySchedule schedule) {
@@ -130,13 +135,28 @@ public class RedisController : IRedisController {
         try {
             var json = JsonSerializer.Serialize(daySchedule);
             var dateKey = GetDateKey(daySchedule);
-            await _redis.StringSetAsync($"{dateKey}:{daySchedule.mainGroup}:hash", GetScheduleHash(daySchedule), TimeSpan.FromDays(3));
-            await _redis.StringSetAsync($"{dateKey}:{daySchedule.mainGroup}:data", json, TimeSpan.FromDays(3));
+            var expire = TimeSpan.FromDays((double)_options.scheduleExpireDays);
+            await _redis.StringSetAsync($"{dateKey}:{daySchedule.mainGroup}:hash", GetScheduleHash(daySchedule), expire);
+            await _redis.StringSetAsync($"{dateKey}:{daySchedule.mainGroup}:data", json, expire);
 
             _logger.LogDebug($"Расписание для '{dateKey}' сохранено в кэш");
         }
         catch (Exception e) {
             _logger.LogCritical(e, "Ошибка сохранения расписания в кэш!");
+            throw new Exception(e.Message);
+        }
+    }
+
+    public async Task SetScheduleDefaultExpire(DaySchedule daySchedule) {
+        try {
+            var dataKey = GetDateKey(daySchedule);
+            var expire = TimeSpan.FromDays((double)_options.scheduleExpireDays);
+            await _redis.KeyExpireAsync($"{dataKey}:{daySchedule.mainGroup}:hash", expire);
+            await _redis.KeyExpireAsync($"{dataKey}:{daySchedule.mainGroup}:data", expire);
+            _logger.LogInformation($"Срок действия расписания для {daySchedule.mainGroup} обновлён.");
+        }
+        catch (Exception e) {
+            _logger.LogCritical(e, "Ошибка при продлении срока действия расписания!");
             throw new Exception(e.Message);
         }
     }

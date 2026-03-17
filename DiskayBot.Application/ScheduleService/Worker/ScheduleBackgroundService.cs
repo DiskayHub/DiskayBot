@@ -34,6 +34,9 @@ public class ScheduleBackgroundService : BackgroundService {
                             await _mediator.Publish(new ScheduleUpdatedEvent(freshDaySchedule));
                             await _redis.SaveSchedule(freshDaySchedule);
                         }
+                        else {
+                            await _redis.SetScheduleDefaultExpire(freshDaySchedule);
+                        }
                     }
                 }
             }

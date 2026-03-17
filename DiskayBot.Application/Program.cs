@@ -15,6 +15,7 @@ using DiskayBot.Bot.ScheduleService.Options;
 using DiskayBot.Bot.ScheduleService.Worker;
 using DiskayBot.Redis;
 using DiskayBot.Redis.Abstractions;
+using DiskayBot.Redis.Options;
 using DotNetEnv;
 using MediatR;
 using StackExchange.Redis;
@@ -43,6 +44,7 @@ var host = Host.CreateDefaultBuilder(args)
         services.Configure<UserClientOptions>(configuration.GetSection("UserClient"));
         services.Configure<ScheduleClientOptions>(configuration.GetSection("ScheduleClient"));
         services.Configure<ScheduleServiceOptions>(configuration.GetSection("ScheduleService"));
+        services.Configure<RedisOptions>(configuration.GetSection("Redis"));
         
         // HttpClient
         services.AddHttpClient();

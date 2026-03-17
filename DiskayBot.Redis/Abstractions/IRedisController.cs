@@ -15,4 +15,5 @@ public interface IRedisController {
     public Task SaveSchedule(DaySchedule daySchedule);
     public Task<DaySchedule?> GetSchedule(string groupName, DateOnly date);
     public Task<bool> CheckScheduleEquals(DaySchedule daySchedule);
+    public Task SetScheduleDefaultExpire(DaySchedule daySchedule);
 }
