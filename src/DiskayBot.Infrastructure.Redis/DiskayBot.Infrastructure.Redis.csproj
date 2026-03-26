@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+<<<<<<< Updated upstream:src/DiskayBot.Infrastructure.Redis/DiskayBot.Infrastructure.Redis.csproj
+      <PackageReference Include="StackExchange.Redis" Version="2.8.47" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DiskayBot.Infrastructure\DiskayBot.Infrastructure.csproj" />
+=======
+      <ProjectReference Include="..\DiskayBot.API\DiskayBot.API.csproj" />
+      <ProjectReference Include="..\DiskayBot.Tests\DiskayBot.Tests.csproj" />
+>>>>>>> Stashed changes:DiskayBot.Services/DiskayBot.Services.csproj
+    </ItemGroup>
+
+</Project>
