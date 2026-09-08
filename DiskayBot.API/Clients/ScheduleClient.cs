@@ -25,8 +25,8 @@ public class ScheduleClient : IScheduleClient {
     private async Task<List<ApiItem>?> GetSchedule(DayScheduleRequest requestBody) {
         var ctsToken = new CancellationTokenSource();
         ctsToken.CancelAfter(TimeSpan.FromSeconds(30));
-        
-        var response = await _client.PostAsync($"{_options.url}/schedule25.php", requestBody.GetStringContent(),
+
+        var response = await _client.PostAsync($"{_options.url}/Schedule/schedule26.php", requestBody.GetStringContent(),
             ctsToken.Token);
 
         if (response.IsSuccessStatusCode) {

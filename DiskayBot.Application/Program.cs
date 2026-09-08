@@ -21,6 +21,7 @@ using MediatR;
 using StackExchange.Redis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 var WORK_DIRECTORY = "../../../"; //Путь относительно bin/Debug/net9.0
 
@@ -64,7 +65,21 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<MemoryController>();
 
         // Schedule
-        services.AddSingleton<IScheduleClient, ScheduleClient>();
+        services.AddHttpClient<IScheduleClient, ScheduleClient>((sp, client) => {
+            var scheduleOptions = sp.GetRequiredService<IOptions<ScheduleClientOptions>>().Value;
+            if (!scheduleOptions.authEnabled) {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(scheduleOptions.login) || string.IsNullOrWhiteSpace(scheduleOptions.password)) {
+                throw new Exception(
+                    "ScheduleClient: авторизация включена, но не заданы ScheduleClient__login / ScheduleClient__password");
+            }
+
+            client.DefaultRequestHeaders.TryAddWithoutValidation(
+                "Cookie",
+                $"session=STDNT-login-user={scheduleOptions.login}&STDNT-login-pw={scheduleOptions.password}");
+        });
         services.AddSingleton<IScheduleController, ScheduleController>();
 
         // Сканирование и регистрация команд/каллбеков
