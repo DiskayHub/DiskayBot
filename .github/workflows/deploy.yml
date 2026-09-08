@@ -10,6 +10,11 @@ on:
     types:
       - closed
 
+# Required repository secrets:
+#   SSH_PRIVATE_KEY, SSH_HOST, SSH_USER  - SSH access to the deploy server
+#   SCHEDULE_LOGIN, SCHEDULE_PASSWORD    - college schedule portal credentials
+#   ADMIN_ID                             - Telegram admin id
+
 jobs:
   deploy:
     name: SSH Deploy
@@ -25,6 +30,15 @@ jobs:
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Run deploy script
+        env:
+          SCHEDULE_LOGIN: ${{ secrets.SCHEDULE_LOGIN }}
+          SCHEDULE_PASSWORD: ${{ secrets.SCHEDULE_PASSWORD }}
+          ADMIN_ID: ${{ secrets.ADMIN_ID }}
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "bash ~/projects/DiskayHub/deploy.sh"
+            "git -C ~/projects/DiskayHub/DiskayBot pull origin master \
+             && cp ~/projects/DiskayHub/DiskayBot/deploy.sh ~/projects/DiskayHub/deploy.sh \
+             && bash ~/projects/DiskayHub/deploy.sh \
+                  --login '$SCHEDULE_LOGIN' \
+                  --password '$SCHEDULE_PASSWORD' \
+                  --admin-id '$ADMIN_ID'"
