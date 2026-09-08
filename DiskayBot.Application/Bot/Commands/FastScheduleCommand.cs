@@ -19,7 +19,7 @@ public class FastScheduleCommand : IBaseCommand {
     }
 
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
-        var daySchedule = await _schedule.GetActualSchedule($"ИТ{ctx.User!.group_name}");
+        var daySchedule = await _schedule.GetActualSchedule(ctx.User!.group_name);
         if (daySchedule != null) {
             var result = MessageBuilder.ShowSchedule(daySchedule);
             await ctx.Bot.SendMessage(ctx.Event.Chat, result, ParseMode.Html, replyMarkup: GlobalKeyboard.GetScheduleNavigatorKeyboard(daySchedule.date), cancellationToken: token);

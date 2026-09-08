@@ -1,3 +1,4 @@
+using DiskayBot.API.Clients;
 using DiskayBot.API.Interfaces;
 using DiskayBot.Bot.ScheduleService.Events;
 using DiskayBot.Bot.ScheduleService.Options;
@@ -13,18 +14,41 @@ public class ScheduleBackgroundService : BackgroundService {
     private readonly IScheduleClient  _scheduleClient;
     private readonly IRedisController _redis;
     private readonly IMediator _mediator;
+    private readonly UserClient _userClient;
     private readonly ScheduleServiceOptions _options;
     private readonly ILogger<ScheduleBackgroundService> _logger;
-    
-    public ScheduleBackgroundService(IMediator mediator, IScheduleClient scheduleClient, IRedisController redis, IOptions<ScheduleServiceOptions> options, ILogger<ScheduleBackgroundService> logger) {
+
+    private IReadOnlyList<string> _groups = Array.Empty<string>();
+
+    public ScheduleBackgroundService(IMediator mediator, IScheduleClient scheduleClient, IRedisController redis, UserClient userClient, IOptions<ScheduleServiceOptions> options, ILogger<ScheduleBackgroundService> logger) {
         _mediator =  mediator;
         _scheduleClient = scheduleClient;
         _redis = redis;
+        _userClient = userClient;
         _options = options.Value;
         _logger = logger;
     }
+
+    private async Task RefreshGroups() {
+        try {
+            var groups = await _userClient.GetAllGroups();
+            if (groups is { Count: > 0 }) {
+                _groups = groups.Select(group => group.name).ToList();
+                _logger.LogInformation("Список групп обновлён, всего групп: {Count}", _groups.Count);
+            }
+            else {
+                _logger.LogWarning("DiskayMemory вернул пустой список групп, оставляю предыдущий ({Count})", _groups.Count);
+            }
+        }
+        catch (Exception ex) {
+            _logger.LogError(ex, "Не удалось обновить список групп, оставляю предыдущий ({Count})", _groups.Count);
+        }
+    }
+
     private async Task UpdateSchedule() {
-        foreach (var group in _options.allGroups) {
+        await RefreshGroups();
+
+        foreach (var group in _groups) {
             try {
                 var freshWeekSchedule = await _scheduleClient.GetCurrentWeekSchedule(group);
                 if (freshWeekSchedule != null) {

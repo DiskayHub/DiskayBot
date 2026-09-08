@@ -27,7 +27,7 @@ public class NextScheduleCallback : IBaseCommand {
             await ctx.Bot.AnswerCallbackQuery(callbackEvent.Id, cancellationToken: token);
             return;
         }
-        var schedule = await _schedule.GetNextSchedule($"ИТ{ctx.User!.group_name}", date);
+        var schedule = await _schedule.GetNextSchedule(ctx.User!.group_name, date);
         if (schedule == null) {
             await ctx.Bot.AnswerCallbackQuery(callbackEvent.Id, "Нет следующего расписания", cancellationToken: token);
             return;

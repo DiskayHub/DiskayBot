@@ -21,7 +21,7 @@ public class CheckScheduleCallback : IBaseCommand {
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
         var callbackEvent = (CallbackQueryUserEvent)ctx.Event;
         if (callbackEvent.Query != null) {
-            var schedule = await _scheduleService.GetActualSchedule($"ИТ{callbackEvent.Query}");
+            var schedule = await _scheduleService.GetActualSchedule(callbackEvent.Query);
             if (schedule != null) {
                 var course = callbackEvent.QueryArgs?[0] ?? callbackEvent.Query;
                 var keyboard = new InlineKeyboardMarkup(new[] {

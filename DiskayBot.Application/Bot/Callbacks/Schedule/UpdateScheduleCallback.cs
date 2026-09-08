@@ -22,7 +22,7 @@ public class UpdateScheduleCallback : IBaseCommand {
 
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
         var callbackEvent = (CallbackQueryUserEvent)ctx.Event;
-        var schedule = await _scheduleService.GetActualSchedule($"ИТ{ctx.User!.group_name}");
+        var schedule = await _scheduleService.GetActualSchedule(ctx.User!.group_name);
         if (schedule != null) {
             try {
                 await ctx.Bot.EditMessageText(

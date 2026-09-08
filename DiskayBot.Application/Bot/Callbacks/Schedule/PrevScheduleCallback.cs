@@ -28,7 +28,7 @@ public class PrevScheduleCallback : IBaseCommand {
             return;
         }
 
-        var schedule = await _schedule.GetPreviousSchedule($"ИТ{ctx.User!.group_name}", date);
+        var schedule = await _schedule.GetPreviousSchedule(ctx.User!.group_name, date);
         if (schedule == null) {
             await ctx.Bot.AnswerCallbackQuery(callbackEvent.Id, "Нет предыдущего расписания", cancellationToken: token);
             return;
