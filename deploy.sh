@@ -42,8 +42,8 @@ echo -e "${BOLD}═════════════════════�
 #  Arguments
 # ─────────────────────────────────────────────
 # Values passed here are injected into the diskayBot container environment
-# through DiskayBot/DiskayBot.Application/.env (see Step 1). Any option that is
-# omitted keeps whatever is already present in .env.
+# through DiskayBot/DiskayBot.Application/.env, which is generated from them
+# in Step 1. All options are required.
 
 ARG_LOGIN=""
 ARG_PASSWORD=""
@@ -85,6 +85,18 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+MISSING=()
+[ -n "$ARG_LOGIN" ]    || MISSING+=("--login")
+[ -n "$ARG_PASSWORD" ] || MISSING+=("--password")
+[ -n "$ARG_ADMIN_ID" ] || MISSING+=("--admin-id")
+[ -n "$ARG_TOKEN" ]    || MISSING+=("--token")
+
+if [ ${#MISSING[@]} -gt 0 ]; then
+    log_err "missing required argument(s): ${MISSING[*]}"
+    usage
+    exit 1
+fi
+
 # ─────────────────────────────────────────────
 #  Step 1: Sync repositories
 # ─────────────────────────────────────────────
@@ -109,53 +121,15 @@ sync_repo() {
 sync_repo "DiskayBot"    "git@github.com:DiskayHub/DiskayBot.git"
 sync_repo "DiskayMemory" "git@github.com:DiskayHub/DiskayMemory.git"
 
-# Copy .env into DiskayBot.Application
-ENV_SRC="$SCRIPT_DIR/.env"
+# Generate the bot .env from scratch using only the CLI arguments
 ENV_DST="$SCRIPT_DIR/DiskayBot/DiskayBot.Application/.env"
-if [ -f "$ENV_SRC" ]; then
-    cp "$ENV_SRC" "$ENV_DST"
-    log_ok ".env copied to DiskayBot/DiskayBot.Application/"
-else
-    log_err ".env not found in $SCRIPT_DIR — aborting"
-    exit 1
-fi
-
-# Override entries in the deployed .env with values passed as CLI arguments
-upsert_env() {
-    local key="$1"
-    local value="$2"
-    local file="$3"
-
-    # remove any existing definition (tolerate spaces around '=')
-    sed -i -E "/^[[:space:]]*${key}[[:space:]]*=/d" "$file"
-
-    # ensure the file ends with a newline before appending
-    if [ -s "$file" ] && [ -n "$(tail -c1 "$file")" ]; then
-        printf '\n' >> "$file"
-    fi
-
-    printf '%s=%s\n' "$key" "$value" >> "$file"
-}
-
-if [ -n "$ARG_LOGIN" ]; then
-    upsert_env "ScheduleClient__login" "$ARG_LOGIN" "$ENV_DST"
-    log_ok "ScheduleClient__login set from argument"
-fi
-
-if [ -n "$ARG_PASSWORD" ]; then
-    upsert_env "ScheduleClient__password" "$ARG_PASSWORD" "$ENV_DST"
-    log_ok "ScheduleClient__password set from argument"
-fi
-
-if [ -n "$ARG_ADMIN_ID" ]; then
-    upsert_env "Admin__AdminId" "$ARG_ADMIN_ID" "$ENV_DST"
-    log_ok "Admin__AdminId set from argument ($ARG_ADMIN_ID)"
-fi
-
-if [ -n "$ARG_TOKEN" ]; then
-    upsert_env "TelegramBot__Token" "$ARG_TOKEN" "$ENV_DST"
-    log_ok "TelegramBot__Token set from argument"
-fi
+{
+    printf '%s=%s\n' "ScheduleClient__login"    "$ARG_LOGIN"
+    printf '%s=%s\n' "ScheduleClient__password" "$ARG_PASSWORD"
+    printf '%s=%s\n' "Admin__AdminId"            "$ARG_ADMIN_ID"
+    printf '%s=%s\n' "TelegramBot__Token"        "$ARG_TOKEN"
+} > "$ENV_DST"
+log_ok ".env generated at DiskayBot/DiskayBot.Application/ from arguments"
 
 # ─────────────────────────────────────────────
 #  Step 2: Database backup
