@@ -48,6 +48,7 @@ echo -e "${BOLD}═════════════════════�
 ARG_LOGIN=""
 ARG_PASSWORD=""
 ARG_ADMIN_ID=""
+ARG_TOKEN=""
 
 usage() {
     cat <<EOF
@@ -56,6 +57,7 @@ Usage: $(basename "$0") [options]
   -l, --login <value>       ScheduleClient login    -> ScheduleClient__login
   -p, --password <value>    ScheduleClient password -> ScheduleClient__password
   -a, --admin-id <value>    Telegram admin id       -> Admin__AdminId
+  -t, --token <value>       Telegram bot API token  -> TelegramBot__Token
   -h, --help                show this help
 EOF
 }
@@ -71,6 +73,9 @@ while [ $# -gt 0 ]; do
         -a|--admin-id)
             [ $# -ge 2 ] || { log_err "$1 requires a value"; exit 1; }
             ARG_ADMIN_ID="$2"; shift 2 ;;
+        -t|--token)
+            [ $# -ge 2 ] || { log_err "$1 requires a value"; exit 1; }
+            ARG_TOKEN="$2"; shift 2 ;;
         -h|--help)
             usage; exit 0 ;;
         *)
@@ -145,6 +150,11 @@ fi
 if [ -n "$ARG_ADMIN_ID" ]; then
     upsert_env "Admin__AdminId" "$ARG_ADMIN_ID" "$ENV_DST"
     log_ok "Admin__AdminId set from argument ($ARG_ADMIN_ID)"
+fi
+
+if [ -n "$ARG_TOKEN" ]; then
+    upsert_env "TelegramBot__Token" "$ARG_TOKEN" "$ENV_DST"
+    log_ok "TelegramBot__Token set from argument"
 fi
 
 # ─────────────────────────────────────────────

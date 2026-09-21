@@ -14,6 +14,7 @@ on:
 #   SSH_PRIVATE_KEY, SSH_HOST, SSH_USER  - SSH access to the deploy server
 #   SCHEDULE_LOGIN, SCHEDULE_PASSWORD    - college schedule portal credentials
 #   ADMIN_ID                             - Telegram admin id
+#   BOT_TOKEN                            - Telegram bot API token
 
 jobs:
   deploy:
@@ -34,6 +35,7 @@ jobs:
           SCHEDULE_LOGIN: ${{ secrets.SCHEDULE_LOGIN }}
           SCHEDULE_PASSWORD: ${{ secrets.SCHEDULE_PASSWORD }}
           ADMIN_ID: ${{ secrets.ADMIN_ID }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             "git -C ~/projects/DiskayHub/DiskayBot pull origin master \
@@ -41,4 +43,5 @@ jobs:
              && bash ~/projects/DiskayHub/deploy.sh \
                   --login '$SCHEDULE_LOGIN' \
                   --password '$SCHEDULE_PASSWORD' \
-                  --admin-id '$ADMIN_ID'"
+                  --admin-id '$ADMIN_ID' \
+                  --token '$BOT_TOKEN'"
