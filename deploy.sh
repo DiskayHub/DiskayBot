@@ -243,7 +243,12 @@ while IFS= read -r line; do
     fi
 done < <(docker compose -f "$COMPOSE_FILE" ps --format 'table {{.Service}}\t{{.Status}}' | tail -n +2)
 
-# Check ports for services that expose them
+# Ports are not published to the host, so they are probed from inside the
+# compose network with a throwaway container. The redis image is already
+# pulled for the stack and ships busybox nc.
+NETWORK="diskayhub_diskayNetwork"
+PROBE_IMAGE="redis:8.2-alpine"
+
 check_port() {
     local service="$1"
     local port="$2"
@@ -251,7 +256,8 @@ check_port() {
     local wait=3
 
     for i in $(seq 1 $retries); do
-        if (echo > /dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+        if docker run --rm --network "$NETWORK" "$PROBE_IMAGE" \
+            nc -z -w 3 "$service" "$port" >/dev/null 2>&1; then
             log_ok "$service — port $port is open"
             return 0
         fi
@@ -264,7 +270,7 @@ check_port() {
 }
 
 echo ""
-log_info "Checking exposed ports..."
+log_info "Checking service ports inside $NETWORK..."
 check_port "diskay_memory" 8080
 check_port "postgres"      5432
 check_port "redis"         6379
