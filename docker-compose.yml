@@ -1,0 +1,79 @@
+# deploy.sh copies this file to ~/projects/DiskayHub/ and runs it from there,
+# so build contexts and env_file are relative to that directory.
+# The project name is pinned to keep the existing diskayhub_* volumes.
+name: diskayhub
+
+services:
+  diskay_bot:
+    container_name: diskayBot
+    env_file:
+      - DiskayBot/DiskayBot.Application/.env
+    build:
+      context: ./DiskayBot
+      dockerfile: dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+      diskay_memory:
+        condition: service_started
+    environment:
+      - TZ=Asia/Yekaterinburg
+    restart: unless-stopped
+    networks:
+      - diskayNetwork
+
+  diskay_memory:
+    container_name: diskayMemory
+    build:
+      context: ./DiskayMemory
+      dockerfile: dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    restart: unless-stopped
+    networks:
+      - diskayNetwork
+
+  redis:
+    container_name: redis
+    image: redis:8.2-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD} --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - diskayNetwork
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: diskay_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: diskay_memory
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - diskayNetwork
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  redis_data:
+  postgres_data:
+
+networks:
+  diskayNetwork:

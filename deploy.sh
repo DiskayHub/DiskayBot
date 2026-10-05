@@ -128,6 +128,10 @@ sync_repo() {
 sync_repo "DiskayBot"    "git@github.com:DiskayHub/DiskayBot.git"
 sync_repo "DiskayMemory" "git@github.com:DiskayHub/DiskayMemory.git"
 
+# docker-compose.yml lives in the DiskayBot repo but runs from DiskayHub root
+cp "$SCRIPT_DIR/DiskayBot/docker-compose.yml" "$SCRIPT_DIR/docker-compose.yml"
+log_ok "docker-compose.yml copied from DiskayBot"
+
 # Generate the bot .env from scratch using only the CLI arguments
 ENV_DST="$SCRIPT_DIR/DiskayBot/DiskayBot.Application/.env"
 {
