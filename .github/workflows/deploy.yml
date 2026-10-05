@@ -31,6 +31,21 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
+      # Fresh server: create ~/projects/DiskayHub and clone DiskayBot if missing,
+      # otherwise pull. The server still needs its own GitHub SSH key.
+      - name: Prepare server
+        run: |
+          ssh -i ~/.ssh/id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "set -e
+             mkdir -p ~/projects/DiskayHub
+             export GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new'
+             if [ -d ~/projects/DiskayHub/DiskayBot/.git ]; then
+               git -C ~/projects/DiskayHub/DiskayBot pull origin master
+             else
+               git clone git@github.com:DiskayHub/DiskayBot.git ~/projects/DiskayHub/DiskayBot
+             fi
+             cp ~/projects/DiskayHub/DiskayBot/deploy.sh ~/projects/DiskayHub/deploy.sh"
+
       - name: Run deploy script
         env:
           SCHEDULE_LOGIN: ${{ secrets.SCHEDULE_LOGIN }}
@@ -40,9 +55,7 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "git -C ~/projects/DiskayHub/DiskayBot pull origin master \
-             && cp ~/projects/DiskayHub/DiskayBot/deploy.sh ~/projects/DiskayHub/deploy.sh \
-             && bash ~/projects/DiskayHub/deploy.sh \
+            "bash ~/projects/DiskayHub/deploy.sh \
                   --login '$SCHEDULE_LOGIN' \
                   --password '$SCHEDULE_PASSWORD' \
                   --admin-id '$ADMIN_ID' \
