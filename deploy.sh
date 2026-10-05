@@ -104,6 +104,16 @@ if [ ${#MISSING[@]} -gt 0 ]; then
     exit 1
 fi
 
+# Passwords end up unquoted in compose commands and connection strings,
+# where spaces, quotes, ',' or ';' would silently break them
+INVALID=()
+[[ "$ARG_REDIS_PASSWORD" =~ ^[A-Za-z0-9]+$ ]] || INVALID+=("--redis-password")
+
+if [ ${#INVALID[@]} -gt 0 ]; then
+    log_err "only letters and digits are allowed in: ${INVALID[*]}"
+    exit 1
+fi
+
 # ─────────────────────────────────────────────
 #  Step 1: Sync repositories
 # ─────────────────────────────────────────────
