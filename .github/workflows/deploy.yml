@@ -15,6 +15,7 @@ on:
 #   SCHEDULE_LOGIN, SCHEDULE_PASSWORD    - college schedule portal credentials
 #   ADMIN_ID                             - Telegram admin id
 #   BOT_TOKEN                            - Telegram bot API token
+#   REDIS_PASSWORD                       - Redis password (bot + redis server)
 
 jobs:
   deploy:
@@ -36,6 +37,7 @@ jobs:
           SCHEDULE_PASSWORD: ${{ secrets.SCHEDULE_PASSWORD }}
           ADMIN_ID: ${{ secrets.ADMIN_ID }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             "git -C ~/projects/DiskayHub/DiskayBot pull origin master \
@@ -44,4 +46,5 @@ jobs:
                   --login '$SCHEDULE_LOGIN' \
                   --password '$SCHEDULE_PASSWORD' \
                   --admin-id '$ADMIN_ID' \
-                  --token '$BOT_TOKEN'"
+                  --token '$BOT_TOKEN' \
+                  --redis-password '$REDIS_PASSWORD'"

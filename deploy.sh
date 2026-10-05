@@ -49,6 +49,7 @@ ARG_LOGIN=""
 ARG_PASSWORD=""
 ARG_ADMIN_ID=""
 ARG_TOKEN=""
+ARG_REDIS_PASSWORD=""
 
 usage() {
     cat <<EOF
@@ -58,6 +59,8 @@ Usage: $(basename "$0") [options]
   -p, --password <value>    ScheduleClient password -> ScheduleClient__password
   -a, --admin-id <value>    Telegram admin id       -> Admin__AdminId
   -t, --token <value>       Telegram bot API token  -> TelegramBot__Token
+  -r, --redis-password <value>
+                            Redis password          -> Redis__ConnectionString, REDIS_PASSWORD
   -h, --help                show this help
 EOF
 }
@@ -76,6 +79,9 @@ while [ $# -gt 0 ]; do
         -t|--token)
             [ $# -ge 2 ] || { log_err "$1 requires a value"; exit 1; }
             ARG_TOKEN="$2"; shift 2 ;;
+        -r|--redis-password)
+            [ $# -ge 2 ] || { log_err "$1 requires a value"; exit 1; }
+            ARG_REDIS_PASSWORD="$2"; shift 2 ;;
         -h|--help)
             usage; exit 0 ;;
         *)
@@ -90,6 +96,7 @@ MISSING=()
 [ -n "$ARG_PASSWORD" ] || MISSING+=("--password")
 [ -n "$ARG_ADMIN_ID" ] || MISSING+=("--admin-id")
 [ -n "$ARG_TOKEN" ]    || MISSING+=("--token")
+[ -n "$ARG_REDIS_PASSWORD" ] || MISSING+=("--redis-password")
 
 if [ ${#MISSING[@]} -gt 0 ]; then
     log_err "missing required argument(s): ${MISSING[*]}"
@@ -128,6 +135,7 @@ ENV_DST="$SCRIPT_DIR/DiskayBot/DiskayBot.Application/.env"
     printf '%s=%s\n' "ScheduleClient__password" "$ARG_PASSWORD"
     printf '%s=%s\n' "Admin__AdminId"            "$ARG_ADMIN_ID"
     printf '%s=%s\n' "TelegramBot__Token"        "$ARG_TOKEN"
+    printf '%s=%s\n' "Redis__ConnectionString"   "redis:6379,password=${ARG_REDIS_PASSWORD},abortConnect=false"
 } > "$ENV_DST"
 log_ok ".env generated at DiskayBot/DiskayBot.Application/ from arguments"
 
@@ -161,6 +169,10 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     log_err "docker-compose.yml not found in $SCRIPT_DIR"
     exit 1
 fi
+
+# Shell environment takes precedence over .env in compose interpolation,
+# so redis starts with the same password the bot was given
+export REDIS_PASSWORD="$ARG_REDIS_PASSWORD"
 
 log_info "Running docker compose up --build -d..."
 docker compose -f "$COMPOSE_FILE" up --build -d
