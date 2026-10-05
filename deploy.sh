@@ -50,6 +50,7 @@ ARG_PASSWORD=""
 ARG_ADMIN_ID=""
 ARG_TOKEN=""
 ARG_REDIS_PASSWORD=""
+ARG_POSTGRES_PASSWORD=""
 
 usage() {
     cat <<EOF
@@ -61,6 +62,8 @@ Usage: $(basename "$0") [options]
   -t, --token <value>       Telegram bot API token  -> TelegramBot__Token
   -r, --redis-password <value>
                             Redis password          -> Redis__ConnectionString, REDIS_PASSWORD
+  -d, --db-password <value>
+                            Postgres password       -> POSTGRES_PASSWORD, DiskayMemory connection string
   -h, --help                show this help
 EOF
 }
@@ -82,6 +85,9 @@ while [ $# -gt 0 ]; do
         -r|--redis-password)
             [ $# -ge 2 ] || { log_err "$1 requires a value"; exit 1; }
             ARG_REDIS_PASSWORD="$2"; shift 2 ;;
+        -d|--db-password)
+            [ $# -ge 2 ] || { log_err "$1 requires a value"; exit 1; }
+            ARG_POSTGRES_PASSWORD="$2"; shift 2 ;;
         -h|--help)
             usage; exit 0 ;;
         *)
@@ -97,6 +103,7 @@ MISSING=()
 [ -n "$ARG_ADMIN_ID" ] || MISSING+=("--admin-id")
 [ -n "$ARG_TOKEN" ]    || MISSING+=("--token")
 [ -n "$ARG_REDIS_PASSWORD" ] || MISSING+=("--redis-password")
+[ -n "$ARG_POSTGRES_PASSWORD" ] || MISSING+=("--db-password")
 
 if [ ${#MISSING[@]} -gt 0 ]; then
     log_err "missing required argument(s): ${MISSING[*]}"
@@ -108,6 +115,7 @@ fi
 # where spaces, quotes, ',' or ';' would silently break them
 INVALID=()
 [[ "$ARG_REDIS_PASSWORD" =~ ^[A-Za-z0-9]+$ ]] || INVALID+=("--redis-password")
+[[ "$ARG_POSTGRES_PASSWORD" =~ ^[A-Za-z0-9]+$ ]] || INVALID+=("--db-password")
 
 if [ ${#INVALID[@]} -gt 0 ]; then
     log_err "only letters and digits are allowed in: ${INVALID[*]}"
@@ -185,8 +193,26 @@ if [ ! -f "$COMPOSE_FILE" ]; then
 fi
 
 # Shell environment takes precedence over .env in compose interpolation,
-# so redis starts with the same password the bot was given
+# so redis and postgres start with the passwords the services were given
 export REDIS_PASSWORD="$ARG_REDIS_PASSWORD"
+export POSTGRES_PASSWORD="$ARG_POSTGRES_PASSWORD"
+
+# POSTGRES_PASSWORD only applies when the database is first created, so the
+# password is synced explicitly before DiskayMemory starts and runs migrations
+log_info "Starting postgres and syncing its password..."
+docker compose -f "$COMPOSE_FILE" up -d postgres
+for i in $(seq 1 30); do
+    [ "$(docker inspect -f '{{.State.Health.Status}}' diskay_postgres 2>/dev/null)" = "healthy" ] && break
+    sleep 2
+done
+if [ "$(docker inspect -f '{{.State.Health.Status}}' diskay_postgres 2>/dev/null)" != "healthy" ]; then
+    log_err "postgres did not become healthy in 60s"
+    exit 1
+fi
+# Sent via stdin so the password does not show up in the process list
+printf "ALTER USER postgres WITH PASSWORD '%s';\n" "$ARG_POSTGRES_PASSWORD" \
+    | docker exec -i diskay_postgres psql -U postgres -q -v ON_ERROR_STOP=1
+log_ok "postgres password synced"
 
 log_info "Running docker compose up --build -d..."
 docker compose -f "$COMPOSE_FILE" up --build -d

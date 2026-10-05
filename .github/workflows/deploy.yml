@@ -16,6 +16,8 @@ on:
 #   ADMIN_ID                             - Telegram admin id
 #   BOT_TOKEN                            - Telegram bot API token
 #   REDIS_PASSWORD                       - Redis password (bot + redis server)
+#   POSTGRES_PASSWORD                    - Postgres password (DiskayMemory + postgres)
+#   Passwords must contain only letters and digits
 
 jobs:
   deploy:
@@ -53,6 +55,7 @@ jobs:
           ADMIN_ID: ${{ secrets.ADMIN_ID }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             "bash ~/projects/DiskayHub/deploy.sh \
@@ -60,4 +63,5 @@ jobs:
                   --password '$SCHEDULE_PASSWORD' \
                   --admin-id '$ADMIN_ID' \
                   --token '$BOT_TOKEN' \
-                  --redis-password '$REDIS_PASSWORD'"
+                  --redis-password '$REDIS_PASSWORD' \
+                  --db-password '$POSTGRES_PASSWORD'"

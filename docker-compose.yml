@@ -32,6 +32,7 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DiskayDbContext=User ID=postgres;Password=${POSTGRES_PASSWORD};Host=postgres;Port=5432;Database=diskay_memory;
     restart: unless-stopped
     networks:
       - diskayNetwork
