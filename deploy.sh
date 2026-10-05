@@ -133,8 +133,11 @@ sync_repo() {
     local path="$SCRIPT_DIR/$dir"
 
     if [ -d "$path" ]; then
-        log_info "$dir already exists — pulling latest changes..."
-        git -C "$path" pull origin master
+        # The server copy only mirrors GitHub, so reset instead of pull:
+        # a force-pushed master would otherwise stop the deploy
+        log_info "$dir already exists — syncing with origin/master..."
+        git -C "$path" fetch origin master
+        git -C "$path" reset --hard origin/master
         log_ok "$dir updated"
     else
         log_info "$dir not found — cloning from $url..."

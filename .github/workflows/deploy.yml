@@ -42,7 +42,8 @@ jobs:
              mkdir -p ~/projects/DiskayHub
              export GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new'
              if [ -d ~/projects/DiskayHub/DiskayBot/.git ]; then
-               git -C ~/projects/DiskayHub/DiskayBot pull origin master
+               git -C ~/projects/DiskayHub/DiskayBot fetch origin master
+               git -C ~/projects/DiskayHub/DiskayBot reset --hard origin/master
              else
                git clone git@github.com:DiskayHub/DiskayBot.git ~/projects/DiskayHub/DiskayBot
              fi
