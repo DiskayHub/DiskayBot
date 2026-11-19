@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using DiskayBot.API.Clients;
 using DiskayBot.API.Interfaces;
 using DiskayBot.Bot.ScheduleService.Events;
@@ -34,7 +35,6 @@ public class ScheduleBackgroundService : BackgroundService {
             var groups = await _userClient.GetAllGroups();
             if (groups is { Count: > 0 }) {
                 _groups = groups.Select(group => group.name).ToList();
-                _logger.LogInformation("Список групп обновлён, всего групп: {Count}", _groups.Count);
             }
             else {
                 _logger.LogWarning("DiskayMemory вернул пустой список групп, оставляю предыдущий ({Count})", _groups.Count);
@@ -46,6 +46,10 @@ public class ScheduleBackgroundService : BackgroundService {
     }
 
     private async Task UpdateSchedule() {
+        var startedAt = Stopwatch.GetTimestamp();
+        var changedDays = 0;
+        var failedGroups = 0;
+
         await RefreshGroups();
 
         foreach (var group in _groups) {
@@ -57,6 +61,7 @@ public class ScheduleBackgroundService : BackgroundService {
                         if (pastScheduleIsActual == false) {
                             await _mediator.Publish(new ScheduleUpdatedEvent(freshDaySchedule));
                             await _redis.SaveSchedule(freshDaySchedule);
+                            changedDays++;
                         }
                         else {
                             await _redis.SetScheduleDefaultExpire(freshDaySchedule);
@@ -65,18 +70,23 @@ public class ScheduleBackgroundService : BackgroundService {
                 }
             }
             catch (Exception ex) {
+                failedGroups++;
                 _logger.LogError(ex, "Ошибка обновления расписания для группы '{Group}'", group);
             }
         }
+
+        // Пустой цикл повторяется каждые updateTimeout секунд, на Information он только засоряет лог
+        var level = changedDays > 0 || failedGroups > 0 ? LogLevel.Information : LogLevel.Debug;
+        _logger.Log(level,
+            "Обновление расписания завершено за {ElapsedMs:F0} мс: групп {Groups}, изменилось дней {ChangedDays}, ошибок {FailedGroups}",
+            Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds, _groups.Count, changedDays, failedGroups);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-        _logger.LogDebug($"Таймаут запросов: {_options.updateTimeout}");
+        _logger.LogInformation("Обновление расписания запущено, интервал {UpdateTimeout} с", _options.updateTimeout);
         var timer = new PeriodicTimer(TimeSpan.FromSeconds(_options.updateTimeout));
         do {
-            _logger.LogDebug("Обновление расписания...");
             await UpdateSchedule();
-            _logger.LogInformation("Расписание обновленно");
         } while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 }
