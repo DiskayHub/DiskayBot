@@ -18,6 +18,9 @@ services:
         condition: service_started
     environment:
       - TZ=Asia/Yekaterinburg
+    # The bot writes logs to ../../../logs relative to /app, which resolves to /logs
+    volumes:
+      - bot_logs:/logs
     restart: unless-stopped
     networks:
       - diskayNetwork
@@ -75,6 +78,7 @@ services:
 volumes:
   redis_data:
   postgres_data:
+  bot_logs:
 
 networks:
   diskayNetwork:
