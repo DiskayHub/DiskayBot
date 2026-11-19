@@ -43,7 +43,7 @@ echo -e "${BOLD}═════════════════════�
 # ─────────────────────────────────────────────
 # Values passed here are injected into the diskayBot container environment
 # through DiskayBot/DiskayBot.Application/.env, which is generated from them
-# in Step 1. All options are required.
+# in Step 1. All options except --restore are required.
 
 ARG_LOGIN=""
 ARG_PASSWORD=""
@@ -51,6 +51,7 @@ ARG_ADMIN_ID=""
 ARG_TOKEN=""
 ARG_REDIS_PASSWORD=""
 ARG_POSTGRES_PASSWORD=""
+ARG_RESTORE=""
 
 usage() {
     cat <<EOF
@@ -64,6 +65,8 @@ Usage: $(basename "$0") [options]
                             Redis password          -> Redis__ConnectionString, REDIS_PASSWORD
   -d, --db-password <value>
                             Postgres password       -> POSTGRES_PASSWORD, DiskayMemory connection string
+      --restore <file>      optional: pg_dumpall file to restore before DiskayMemory starts.
+                            REPLACES the diskay_memory database (the current one is backed up first)
   -h, --help                show this help
 EOF
 }
@@ -88,6 +91,9 @@ while [ $# -gt 0 ]; do
         -d|--db-password)
             [ $# -ge 2 ] || { log_err "$1 requires a value"; exit 1; }
             ARG_POSTGRES_PASSWORD="$2"; shift 2 ;;
+        --restore)
+            [ $# -ge 2 ] || { log_err "$1 requires a value"; exit 1; }
+            ARG_RESTORE="$2"; shift 2 ;;
         -h|--help)
             usage; exit 0 ;;
         *)
@@ -119,6 +125,11 @@ INVALID=()
 
 if [ ${#INVALID[@]} -gt 0 ]; then
     log_err "only letters and digits are allowed in: ${INVALID[*]}"
+    exit 1
+fi
+
+if [ -n "$ARG_RESTORE" ] && [ ! -s "$ARG_RESTORE" ]; then
+    log_err "--restore file not found or empty: $ARG_RESTORE"
     exit 1
 fi
 
@@ -212,7 +223,27 @@ if [ "$(docker inspect -f '{{.State.Health.Status}}' diskay_postgres 2>/dev/null
     log_err "postgres did not become healthy in 60s"
     exit 1
 fi
-# Sent via stdin so the password does not show up in the process list
+if [ -n "$ARG_RESTORE" ]; then
+    log_info "Restoring database from $ARG_RESTORE..."
+    # The dump creates diskay_memory itself, so the database left by POSTGRES_DB
+    # or a previous deploy has to go; nothing may stay connected to it
+    docker compose -f "$COMPOSE_FILE" stop diskay_bot diskay_memory
+    docker exec diskay_postgres psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 \
+        -c 'DROP DATABASE IF EXISTS diskay_memory;'
+    # Without ON_ERROR_STOP psql exits with 0 on SQL errors, so they are collected
+    # by hand. "role postgres already exists" is expected: the dump recreates it
+    RESTORE_ERRORS=$(docker exec -i diskay_postgres psql -U postgres -d postgres -q < "$ARG_RESTORE" 2>&1 >/dev/null \
+        | grep 'ERROR:' | grep -v 'role "postgres" already exists' || true)
+    if [ -n "$RESTORE_ERRORS" ]; then
+        log_err "restore failed:"
+        echo "$RESTORE_ERRORS"
+        exit 1
+    fi
+    log_ok "database restored"
+fi
+
+# Sent via stdin so the password does not show up in the process list.
+# Runs after the restore too: the dump brings back the old server's password
 printf "ALTER USER postgres WITH PASSWORD '%s';\n" "$ARG_POSTGRES_PASSWORD" \
     | docker exec -i diskay_postgres psql -U postgres -q -v ON_ERROR_STOP=1
 log_ok "postgres password synced"
