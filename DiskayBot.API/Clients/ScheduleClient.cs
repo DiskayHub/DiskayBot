@@ -38,7 +38,8 @@ public class ScheduleClient : IScheduleClient {
             return null;
         }
 
-        throw new ConnectionRefuseExeption("CollegeAPI", "Сервер не отвечает, или отвечает, но не успешно");
+        throw new ConnectionRefuseExeption("CollegeAPI",
+            $"POST {response.RequestMessage?.RequestUri} для группы {requestBody.group} вернул {(int)response.StatusCode} {response.StatusCode}");
     }
 
     public async Task<GroupWeekSchedule?> GetActualScheduleWeek(string groupName) {
