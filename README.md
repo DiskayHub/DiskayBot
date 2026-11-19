@@ -19,6 +19,7 @@ Telegram bot that shows the [IT College](https://students.it-college.ru) class s
 | `/about` | everyone | About the bot and its version |
 | `/check_bot_status` | everyone | DiskayMemory availability |
 | `/create_news <text>` | admin | Broadcast to users with notifications enabled, after confirmation |
+| `/send_message @tag <text>` | admin | Send a personal message to a registered user by their Telegram tag |
 
 The admin is the Telegram user whose id is set in `Admin__AdminId`.
 
