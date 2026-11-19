@@ -5,7 +5,7 @@ using Telegram.Bot.Types.Enums;
 namespace DiskayBot.Bot.Events.Base;
 
 public static class EventCreator {
-    public static UserEvent Create(Update update) {
+    public static UserEvent? Create(Update update) {
         var updateInfo = UpdateParser.Parse(update);
 
         if (updateInfo != null){
@@ -16,6 +16,6 @@ public static class EventCreator {
                     return new CallbackQueryUserEvent(updateInfo, update.CallbackQuery.Data,  update.CallbackQuery.Id);
             } 
         }
-        throw new Exception("Unknown update type");
+        return null;
     }
 }

@@ -1,10 +1,12 @@
 using DiskayBot.Bot.Attributes;
+using DiskayBot.Bot.Bot.Exeptions;
 using DiskayBot.Bot.Bot.KeyBoard.Scripts;
 using DiskayBot.Bot.Bot.Messages;
 using DiskayBot.Bot.DTOs;
 using DiskayBot.Bot.Events;
 using DiskayBot.Bot.Interfaces;
 using DiskayBot.Bot.ScheduleService;
+using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
@@ -15,9 +17,11 @@ namespace DiskayBot.Bot.Bot.Callbacks.Schedule;
 [CallbackName("nextSchedule", AccessLevel.User)]
 public class NextScheduleCallback : IBaseCommand {
     private readonly IScheduleController _schedule;
+    private readonly ILogger<NextScheduleCallback> _logger;
 
-    public NextScheduleCallback(IScheduleController schedule) {
+    public NextScheduleCallback(IScheduleController schedule, ILogger<NextScheduleCallback> logger) {
         _schedule = schedule;
+        _logger = logger;
     }
 
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
@@ -43,7 +47,10 @@ public class NextScheduleCallback : IBaseCommand {
                 cancellationToken: token
             );
         }
-        catch (ApiRequestException) {
+        catch (ApiRequestException ex) {
+            if (!ex.IsMessageNotModified()) {
+                _logger.LogWarning(ex, "Не удалось показать расписание пользователю {UserId}", ctx.Event.UserId);
+            }
             await ctx.Bot.AnswerCallbackQuery(callbackEvent.Id, cancellationToken: token);
         }
     }
