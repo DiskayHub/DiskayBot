@@ -16,4 +16,8 @@ public interface IRedisController {
     public Task<DaySchedule?> GetSchedule(string groupName, DateOnly date);
     public Task<bool> CheckScheduleEquals(DaySchedule daySchedule);
     public Task SetScheduleDefaultExpire(DaySchedule daySchedule);
+
+    // Факт загрузки недели: без него отсутствие дня в кэше не отличить «пар нет» от «данные не получены»
+    public Task MarkWeekLoaded(string groupName, DateOnly weekStart);
+    public Task<bool> IsWeekLoaded(string groupName, DateOnly weekStart);
 }

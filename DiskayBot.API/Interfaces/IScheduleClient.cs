@@ -1,8 +1,9 @@
+using DiskayBot.API.Contracts;
 using DiskayBot.API.Contracts.Schedule;
 
 namespace DiskayBot.API.Interfaces;
 
 public interface IScheduleClient {
     public Task<GroupWeekSchedule?> GetActualScheduleWeek(string groupName);
-    public Task<GroupWeekSchedule?> GetCurrentWeekSchedule(string groupName);
+    public Task<GroupWeekSchedule?> GetWeekSchedule(string groupName, TimePeriod weekPeriod);
 }

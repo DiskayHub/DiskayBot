@@ -61,8 +61,7 @@ public class ScheduleClient : IScheduleClient {
         throw new Exception("Unable to determine schedule period");
     }
 
-    public async Task<GroupWeekSchedule?> GetCurrentWeekSchedule(string groupName) {
-        var weekPeriod = TimeHelper.GetWeekPeriod(DateOnly.FromDateTime(DateTime.Now));
+    public async Task<GroupWeekSchedule?> GetWeekSchedule(string groupName, TimePeriod weekPeriod) {
         var requestBody = DayScheduleRequest.Create(weekPeriod, groupName);
 
         if (requestBody != null) {

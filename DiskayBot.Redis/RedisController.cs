@@ -90,6 +90,19 @@ public class RedisController : IRedisController {
         return data.IsNullOrEmpty ? null : JsonSerializer.Deserialize<DaySchedule>(data!);
     }
 
+    public async Task MarkWeekLoaded(string groupName, DateOnly weekStart) {
+        var expire = TimeSpan.FromDays((double)_options.scheduleExpireDays);
+        await _redis.StringSetAsync(GetWeekLoadedKey(groupName, weekStart), true, expire);
+    }
+
+    public async Task<bool> IsWeekLoaded(string groupName, DateOnly weekStart) {
+        return await _redis.KeyExistsAsync(GetWeekLoadedKey(groupName, weekStart));
+    }
+
+    private static string GetWeekLoadedKey(string groupName, DateOnly weekStart) {
+        return $"{weekStart:dd.MM.yyyy}:{groupName}:weekLoaded";
+    }
+
     public async Task<bool> CheckScheduleEquals(DaySchedule daySchedule) {
         var dateKey = GetDateKey(daySchedule);
         var result = await _redis.StringGetAsync($"{dateKey}:{daySchedule.mainGroup}:hash");

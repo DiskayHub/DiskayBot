@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using DiskayBot.API.Clients;
+using DiskayBot.API.Contracts;
 using DiskayBot.API.Interfaces;
+using DiskayBot.API.Modules;
 using DiskayBot.Bot.ScheduleService.Events;
 using DiskayBot.Bot.ScheduleService.Options;
 using DiskayBot.Redis.Abstractions;
@@ -48,38 +50,57 @@ public class ScheduleBackgroundService : BackgroundService {
     private async Task UpdateSchedule() {
         var startedAt = Stopwatch.GetTimestamp();
         var changedDays = 0;
-        var failedGroups = 0;
+        var failedRequests = 0;
 
         await RefreshGroups();
 
+        // Следующая неделя нужна, чтобы в субботу показывать понедельник
+        TimePeriod[] weeks = [
+            TimeHelper.GetWeekPeriod(DateOnly.FromDateTime(DateTime.Now)),
+            TimeHelper.GetNextWeekPeriod()
+        ];
+
         foreach (var group in _groups) {
-            try {
-                var freshWeekSchedule = await _scheduleClient.GetCurrentWeekSchedule(group);
-                if (freshWeekSchedule != null) {
-                    foreach (var freshDaySchedule in freshWeekSchedule.Schedule) {
-                        var pastScheduleIsActual = await _redis.CheckScheduleEquals(freshDaySchedule);
-                        if (pastScheduleIsActual == false) {
-                            await _mediator.Publish(new ScheduleUpdatedEvent(freshDaySchedule));
-                            await _redis.SaveSchedule(freshDaySchedule);
-                            changedDays++;
-                        }
-                        else {
-                            await _redis.SetScheduleDefaultExpire(freshDaySchedule);
-                        }
-                    }
+            foreach (var week in weeks) {
+                try {
+                    changedDays += await UpdateWeek(group, week);
                 }
-            }
-            catch (Exception ex) {
-                failedGroups++;
-                _logger.LogError(ex, "Ошибка обновления расписания для группы '{Group}'", group);
+                catch (Exception ex) {
+                    failedRequests++;
+                    _logger.LogError(ex, "Ошибка обновления расписания для группы '{Group}' на неделю с {WeekStart:dd.MM.yyyy}",
+                        group, week.Start);
+                }
             }
         }
 
         // Пустой цикл повторяется каждые updateTimeout секунд, на Information он только засоряет лог
-        var level = changedDays > 0 || failedGroups > 0 ? LogLevel.Information : LogLevel.Debug;
+        var level = changedDays > 0 || failedRequests > 0 ? LogLevel.Information : LogLevel.Debug;
         _logger.Log(level,
-            "Обновление расписания завершено за {ElapsedMs:F0} мс: групп {Groups}, изменилось дней {ChangedDays}, ошибок {FailedGroups}",
-            Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds, _groups.Count, changedDays, failedGroups);
+            "Обновление расписания завершено за {ElapsedMs:F0} мс: групп {Groups}, изменилось дней {ChangedDays}, ошибок {FailedRequests}",
+            Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds, _groups.Count, changedDays, failedRequests);
+    }
+
+    private async Task<int> UpdateWeek(string group, TimePeriod week) {
+        var changedDays = 0;
+        var freshWeekSchedule = await _scheduleClient.GetWeekSchedule(group, week);
+        if (freshWeekSchedule != null) {
+            foreach (var freshDaySchedule in freshWeekSchedule.Schedule) {
+                var pastScheduleIsActual = await _redis.CheckScheduleEquals(freshDaySchedule);
+                if (pastScheduleIsActual == false) {
+                    await _mediator.Publish(new ScheduleUpdatedEvent(freshDaySchedule));
+                    await _redis.SaveSchedule(freshDaySchedule);
+                    changedDays++;
+                }
+                else {
+                    await _redis.SetScheduleDefaultExpire(freshDaySchedule);
+                }
+            }
+        }
+
+        // Пустой ответ колледжа — тоже успешная загрузка: значит, пар на неделе нет.
+        // Помечаем после сохранения дней, чтобы неделя не считалась загруженной без своих дней
+        await _redis.MarkWeekLoaded(group, week.Start);
+        return changedDays;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
