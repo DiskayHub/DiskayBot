@@ -38,4 +38,8 @@ public class GlobalKeyboard {
             new[] { InlineKeyboardButton.WithCallbackData("Обновить 💫", "updateSchedule") }
         });
     }
+
+    public static InlineKeyboardMarkup GetScheduleUpdateKeyboard() {
+        return new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("Обновить 💫", "updateSchedule"));
+    }
 }

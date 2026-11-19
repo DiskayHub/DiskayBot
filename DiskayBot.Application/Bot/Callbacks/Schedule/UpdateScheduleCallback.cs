@@ -26,24 +26,37 @@ public class UpdateScheduleCallback : IBaseCommand {
 
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
         var callbackEvent = (CallbackQueryUserEvent)ctx.Event;
-        var schedule = await _scheduleService.GetActualSchedule(ctx.User!.group_name);
-        if (schedule != null) {
-            try {
-                await ctx.Bot.EditMessageText(
-                    ctx.Event.Chat,
-                    ctx.Event.MessageId,
-                    MessageBuilder.ShowSchedule(schedule),
-                    replyMarkup: GlobalKeyboard.GetScheduleNavigatorKeyboard(schedule.date),
-                    parseMode: ParseMode.Html,
-                    cancellationToken: token
-                );
+        var groupName = ctx.User!.group_name;
+        var lookup = await _scheduleService.GetActualSchedule(groupName);
+        var today = DateOnly.FromDateTime(DateTime.Now);
+
+        var (text, keyboard) = lookup.Status switch {
+            ActualScheduleStatus.Found => (
+                MessageBuilder.ShowSchedule(lookup.Schedule!),
+                GlobalKeyboard.GetScheduleNavigatorKeyboard(lookup.Schedule!.date)),
+            ActualScheduleStatus.NoClasses => (
+                MessageBuilder.NoClassesThisWeek(today, groupName),
+                GlobalKeyboard.GetScheduleNavigatorKeyboard(today)),
+            _ => (
+                MessageBuilder.ScheduleNotLoaded(),
+                GlobalKeyboard.GetScheduleUpdateKeyboard())
+        };
+
+        try {
+            await ctx.Bot.EditMessageText(
+                ctx.Event.Chat,
+                ctx.Event.MessageId,
+                text,
+                replyMarkup: keyboard,
+                parseMode: ParseMode.Html,
+                cancellationToken: token
+            );
+        }
+        catch (ApiRequestException ex) {
+            if (!ex.IsMessageNotModified()) {
+                _logger.LogWarning(ex, "Не удалось показать расписание пользователю {UserId}", ctx.Event.UserId);
             }
-            catch (ApiRequestException ex) {
-                if (!ex.IsMessageNotModified()) {
-                    _logger.LogWarning(ex, "Не удалось показать расписание пользователю {UserId}", ctx.Event.UserId);
-                }
-                await ctx.Bot.AnswerCallbackQuery(callbackEvent.Id, cancellationToken: token);
-            }
+            await ctx.Bot.AnswerCallbackQuery(callbackEvent.Id, cancellationToken: token);
         }
     }
 }

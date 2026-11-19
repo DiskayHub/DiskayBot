@@ -108,6 +108,18 @@ public class MessageBuilder {
                $"Как тебе?";
     }
 
+    public static string NoClassesThisWeek(DateOnly date, string groupName) {
+        var sb = new StringBuilder();
+        sb.AppendLine($"📅 <b>{date:dd.MM.yyyy}</b> | 🫡 <b>{groupName}</b>");
+        sb.AppendLine("<code>——————————————————————————</code>");
+        sb.AppendLine("Ближайших пар на этой неделе нет 🎉");
+        return sb.ToString();
+    }
+
+    public static string ScheduleNotLoaded() {
+        return "Не удалось получить расписание. Попробуйте позже.";
+    }
+
     public static string ShowSchedule(DaySchedule daySchedule, bool timeDescription = true) {
         var sb = new StringBuilder();
         var now = DateTime.Now;

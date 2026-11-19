@@ -20,22 +20,29 @@ public class CheckScheduleCallback : IBaseCommand {
 
     public async Task ExecuteAsync(BotContext ctx, CancellationToken token) {
         var callbackEvent = (CallbackQueryUserEvent)ctx.Event;
-        if (callbackEvent.Query != null) {
-            var schedule = await _scheduleService.GetActualSchedule(callbackEvent.Query);
-            if (schedule != null) {
-                var course = callbackEvent.QueryArgs?[0] ?? callbackEvent.Query;
-                var keyboard = new InlineKeyboardMarkup(new[] {
-                    new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", $"checkGroup={course}") }
-                });
-                await ctx.Bot.EditMessageText(
-                    ctx.Event.Chat,
-                    ctx.Event.MessageId,
-                    MessageBuilder.ShowSchedule(schedule),
-                    replyMarkup: keyboard,
-                    parseMode: ParseMode.Html,
-                    cancellationToken: token
-                );
-            }
+        if (callbackEvent.Query == null) {
+            return;
         }
+
+        var groupName = callbackEvent.Query;
+        var lookup = await _scheduleService.GetActualSchedule(groupName);
+        var text = lookup.Status switch {
+            ActualScheduleStatus.Found => MessageBuilder.ShowSchedule(lookup.Schedule!),
+            ActualScheduleStatus.NoClasses => MessageBuilder.NoClassesThisWeek(DateOnly.FromDateTime(DateTime.Now), groupName),
+            _ => MessageBuilder.ScheduleNotLoaded()
+        };
+
+        var course = callbackEvent.QueryArgs?[0] ?? callbackEvent.Query;
+        var keyboard = new InlineKeyboardMarkup(new[] {
+            new[] { InlineKeyboardButton.WithCallbackData("<-- Вернуться назад", $"checkGroup={course}") }
+        });
+        await ctx.Bot.EditMessageText(
+            ctx.Event.Chat,
+            ctx.Event.MessageId,
+            text,
+            replyMarkup: keyboard,
+            parseMode: ParseMode.Html,
+            cancellationToken: token
+        );
     }
 }

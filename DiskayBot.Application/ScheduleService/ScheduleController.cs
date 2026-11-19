@@ -10,7 +10,7 @@ public class ScheduleController : IScheduleController {
         _redis = redis;
     }
 
-    public async Task<DaySchedule?> GetActualSchedule(string groupName) {
+    public async Task<ActualScheduleLookup> GetActualSchedule(string groupName) {
         var period = TimeHelper.GetActualWeekPeriod();
         var startDay = period.Start;
         var today = DateOnly.FromDateTime(DateTime.Now);
@@ -22,15 +22,19 @@ public class ScheduleController : IScheduleController {
                 if (daySchedule.date == today) {
                     var classesFinished = daySchedule.items[daySchedule.items.Count - 1].endTime <= now;
                     if (!classesFinished) {
-                        return daySchedule;
+                        return ActualScheduleLookup.Found(daySchedule);
                     }
                 } else {
-                    return daySchedule;
+                    return ActualScheduleLookup.Found(daySchedule);
                 }
             }
             startDay = startDay.AddDays(1);
         }
-        return null;
+
+        var weekStart = TimeHelper.GetWeekPeriod(period.Start).Start;
+        return await _redis.IsWeekLoaded(groupName, weekStart)
+            ? ActualScheduleLookup.NoClasses()
+            : ActualScheduleLookup.NotLoaded();
     }
 
     public async Task<DaySchedule?> GetNextSchedule(string groupName, DateOnly date) {
