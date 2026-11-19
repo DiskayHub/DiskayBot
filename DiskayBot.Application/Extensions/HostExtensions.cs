@@ -7,33 +7,28 @@ using Serilog.Events;
 namespace DiskayBot.Bot.Extensions;
 
 public static class HostExtensions {
+    private const string OutputTemplate =
+        "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}";
+
     public static IHostBuilder AddLogging(this IHostBuilder hostBuilder, string workDirectory) {
         return hostBuilder.ConfigureLogging(logging => {
             logging.ClearProviders();
         })
+        // Уровни берутся из секции "Serilog" конфигурации, их можно переопределить переменными окружения,
+        // например Serilog__MinimumLevel__Default=Debug
         .UseSerilog((ctx, lc) => lc
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .WriteTo.Console(
-                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}"
-            )
-            .WriteTo.Logger(lc => lc
-                .Filter.ByIncludingOnly(log => log.Level >= LogEventLevel.Error)
-                .WriteTo.File($"{workDirectory}/logs/errors/errors.log")
-            )
-            .WriteTo.Logger(lc => lc
-                .Filter.ByIncludingOnly(log => log.Level == LogEventLevel.Information)
-                .WriteTo.File(
-                    path: $"{workDirectory}/logs/info/.log",
-                    rollingInterval: RollingInterval.Day,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-                )
-            )
-
+            .ReadFrom.Configuration(ctx.Configuration)
+            .WriteTo.Console(outputTemplate: OutputTemplate)
             .WriteTo.File(
                 path: $"{workDirectory}/logs/all/.log",
                 rollingInterval: RollingInterval.Day,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+                outputTemplate: OutputTemplate
+            )
+            .WriteTo.File(
+                path: $"{workDirectory}/logs/errors/.log",
+                restrictedToMinimumLevel: LogEventLevel.Error,
+                rollingInterval: RollingInterval.Day,
+                outputTemplate: OutputTemplate
             )
         );
     }
@@ -41,13 +36,8 @@ public static class HostExtensions {
     public static IHostBuilder AddConfiguration(this IHostBuilder hostBuilder, bool isDocker) {
         return hostBuilder.ConfigureAppConfiguration((context, config) => {
                 if (!isDocker) {
-                    // Если бот запущен не в Docker
-                    Console.WriteLine("DEFAULT CONFIGURATION");
                     var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../"));
                     config.SetBasePath(path);
-                }
-                else {
-                    Console.WriteLine("DOCKER CONFIGURATION");
                 }
 
                 config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);

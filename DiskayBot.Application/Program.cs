@@ -19,8 +19,10 @@ using DiskayBot.Redis.Options;
 using DotNetEnv;
 using MediatR;
 using StackExchange.Redis;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 var WORK_DIRECTORY = "../../../"; //Путь относительно bin/Debug/net9.0
@@ -32,14 +34,8 @@ bool isDocker = Environment.CurrentDirectory == "/app";
 var host = Host.CreateDefaultBuilder(args)
     .AddConfiguration(isDocker)
     .ConfigureServices((context, services) => {
-        Console.WriteLine("Текущая директория: " + Environment.CurrentDirectory);
-
         var configuration = context.Configuration;
 
-        Console.WriteLine($"REDIS: {configuration["Redis:ConnectionString"]}");
-        Console.WriteLine($"DiskayMemory: {configuration["UserClient:url"]}");
-        Console.WriteLine($"ScheduleBackgroundService: {configuration["ScheduleClient:url"]}");
-        
         services.Configure<TelegramBotOptions>(configuration.GetSection("TelegramBot"));
         services.Configure<AdminOptions>(configuration.GetSection("Admin"));
         services.Configure<UserClientOptions>(configuration.GetSection("UserClient"));
@@ -103,4 +99,20 @@ var host = Host.CreateDefaultBuilder(args)
     .AddLogging(WORK_DIRECTORY)
     .Build();
 
+LogStartupConfiguration(host, isDocker);
+
 await host.RunAsync();
+
+static void LogStartupConfiguration(IHost host, bool isDocker) {
+    var configuration = host.Services.GetRequiredService<IConfiguration>();
+    var logger = host.Services.GetRequiredService<ILogger<Program>>();
+    var redis = ConfigurationOptions.Parse(configuration["Redis:ConnectionString"]!);
+
+    logger.LogInformation(
+        "Конфигурация: {Mode}, директория {Directory}, Redis {Redis}, DiskayMemory {UserClientUrl}, CollegeAPI {ScheduleClientUrl}",
+        isDocker ? "Docker" : "локальная",
+        Environment.CurrentDirectory,
+        redis.ToString(includePassword: false),
+        configuration["UserClient:url"],
+        configuration["ScheduleClient:url"]);
+}
