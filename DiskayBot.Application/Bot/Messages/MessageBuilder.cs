@@ -29,6 +29,7 @@ public class MessageBuilder {
         sb.AppendLine("<b>Твои команды:</b>");
         sb.Append(" <b>/disky</b>").AppendLine(" — расписание твоей группы");
         sb.Append(" <b>/check</b>").AppendLine(" — проверить другие группы");
+        sb.Append(" <b>/space</b>").AppendLine(" — свободные кабинеты на сегодня");
         sb.AppendLine();
 
         sb.AppendLine("<b>Настройки и статус:</b>");
@@ -203,7 +204,7 @@ public class MessageBuilder {
 
     public static string ShowFreeRooms(DateOnly date, IReadOnlyList<FreeRoom>? rooms) {
         var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"📅 <b>{date:dd.MM.yyyy}</b> | 🚪 <b>Свободные кабинеты</b>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"📅 <b>{date:dd.MM.yyyy}</b> | <b>Свободные кабинеты</b>");
         sb.AppendLine("<code>——————————————————————————</code>");
         if (rooms == null) {
             return sb.Append("Расписание всех групп на сегодня пока недоступно. Попробуйте позже.").ToString();
@@ -213,33 +214,36 @@ public class MessageBuilder {
         }
 
         var index = 0;
+        if (rooms[0].NextStart == null) {
+            sb.Append("✨ <b>Весь день:</b> ");
+        }
         for (; index < rooms.Count && rooms[index].NextStart == null; index++) {
             if (index > 0) {
                 sb.Append(" · ");
             }
-            sb.Append("<b>").Append(rooms[index].Name).Append("</b>");
+            sb.Append(rooms[index].Name);
         }
-        if (index < rooms.Count) {
-            if (index > 0) {
-                sb.AppendLine().AppendLine();
-            }
-            sb.AppendLine("<b>До следующей пары</b>");
-            var firstScheduled = index;
-            for (; index < rooms.Count; index++) {
-                var room = rooms[index];
-                var start = room.NextStart!.Value;
-                if (index > firstScheduled) {
+        long? previousMinute = null;
+        for (; index < rooms.Count; index++) {
+            var room = rooms[index];
+            var start = room.NextStart!.Value;
+            var minute = start.Ticks / TimeSpan.TicksPerMinute;
+            if (minute != previousMinute) {
+                if (index > 0) {
                     sb.AppendLine().AppendLine();
                 }
-                sb.Append("🫡 <b>");
-                for (var groupIndex = 0; groupIndex < room.NextGroups.Count; groupIndex++) {
-                    if (groupIndex > 0) {
-                        sb.Append(", ");
-                    }
-                    sb.Append(WebUtility.HtmlEncode(room.NextGroups[groupIndex]));
+                sb.AppendLine(CultureInfo.InvariantCulture, $"--&gt; до <b>{start:HH:mm}</b>");
+                previousMinute = minute;
+            }
+            else {
+                sb.AppendLine();
+            }
+            sb.Append("  · <b>").Append(room.Name).Append("</b> : ");
+            for (var groupIndex = 0; groupIndex < room.NextGroups.Count; groupIndex++) {
+                if (groupIndex > 0) {
+                    sb.Append(", ");
                 }
-                sb.AppendLine("</b>");
-                sb.Append(CultureInfo.InvariantCulture, $"<b>{room.Name}</b> · до <b>{start:HH:mm}</b>");
+                sb.Append(WebUtility.HtmlEncode(room.NextGroups[groupIndex]));
             }
         }
         return sb.ToString();

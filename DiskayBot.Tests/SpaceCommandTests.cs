@@ -17,8 +17,9 @@ using Telegram.Bot.Types.Enums;
 namespace DiskayBot.Tests;
 
 public partial class SpaceCommandTests {
-    private const string Header = "📅 <b>25.11.2026</b> | 🚪 <b>Свободные кабинеты</b>\n" +
+    private const string Header = "📅 <b>25.11.2026</b> | <b>Свободные кабинеты</b>\n" +
         "<code>——————————————————————————</code>\n";
+    private const string AllDay = "✨ <b>Весь день:</b> ";
     private static readonly DateOnly Today = new(2026, 11, 25);
     private static readonly string[] RoomNames = [
         "1-3", "2-1", "2-3", "2-4", "2-5", "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-e",
@@ -31,6 +32,7 @@ public partial class SpaceCommandTests {
             new DaySchedule(Today, "ИТ26-11", [
                 Lesson("404", new(11, 30), new(12, 10)),
                 Lesson("410", new(10, 30), new(11, 30)),
+                Lesson("3-4", new(14, 0), new(15, 0)),
                 Lesson("403", new(15, 0), new(16, 0))
             ]),
             new DaySchedule(Today, "ИТ26-13", [
@@ -49,13 +51,12 @@ public partial class SpaceCommandTests {
 
         var text = await Dispatch(snapshot);
 
-        string[] occupiedOrScheduled = ["404", "3-1", "3-2", "403", "405", "406"];
-        var allDay = string.Join(" · ", RoomNames.Except(occupiedOrScheduled).Select(name => $"<b>{name}</b>"));
-        Assert.Equal(Header + allDay + "\n\n" +
-            "<b>До следующей пары</b>\n" +
-            "🫡 <b>ИТ26-12, ИТ26-13</b>\n<b>403</b> · до <b>14:00</b>\n\n" +
-            "🫡 <b>ИТ26-12</b>\n<b>405</b> · до <b>12:00</b>\n\n" +
-            "🫡 <b>ИТ&lt;&amp;&gt;26</b>\n<b>406</b> · до <b>11:30</b>", text);
+        string[] occupiedOrScheduled = ["404", "3-1", "3-2", "3-4", "403", "405", "406"];
+        var allDay = string.Join(" · ", RoomNames.Except(occupiedOrScheduled));
+        Assert.Equal(Header + AllDay + allDay + "\n\n" +
+            "--&gt; до <b>14:00</b>\n  · <b>3-4</b> : ИТ26-11\n  · <b>403</b> : ИТ26-12, ИТ26-13\n\n" +
+            "--&gt; до <b>12:00</b>\n  · <b>405</b> : ИТ26-12\n\n" +
+            "--&gt; до <b>11:30</b>\n  · <b>406</b> : ИТ&lt;&amp;&gt;26", text);
     }
 
     [Theory]
@@ -72,7 +73,7 @@ public partial class SpaceCommandTests {
     public async Task Dispatch_lists_every_room_when_there_are_no_classes() {
         var text = await Dispatch(new RoomScheduleSnapshot(Today, []));
 
-        Assert.Equal(Header + string.Join(" · ", RoomNames.Select(name => $"<b>{name}</b>")), text);
+        Assert.Equal(Header + AllDay + string.Join(" · ", RoomNames), text);
     }
 
     [Fact]
@@ -92,11 +93,18 @@ public partial class SpaceCommandTests {
         var latest = new RoomScheduleSnapshot(Today, []);
         var updatedText = await Dispatch(unchanged ? latest : null, latest, unchanged);
 
-        Assert.Equal(Header + string.Join(" · ", RoomNames.Select(name => $"<b>{name}</b>")), updatedText);
+        Assert.Equal(Header + AllDay + string.Join(" · ", RoomNames), updatedText);
+    }
+
+    [Fact]
+    public async Task Start_lists_the_space_command() {
+        var text = await Dispatch(null, command: "/start");
+
+        Assert.Contains("<b>/space</b> — свободные кабинеты на сегодня", text);
     }
 
     private static async Task<string> Dispatch(RoomScheduleSnapshot? snapshot, RoomScheduleSnapshot? refreshTo = null,
-        bool unchanged = false) {
+        bool unchanged = false, string command = "/space") {
         const long chatId = 123;
         const int messageId = 1;
         const string callbackId = "space-refresh";
@@ -117,16 +125,18 @@ public partial class SpaceCommandTests {
             }
             Assert.Equal(chatId, payload.GetProperty("chat_id").GetInt64());
             Assert.Equal("HTML", payload.GetProperty("parse_mode").GetString(), ignoreCase: true);
-            var row = Assert.Single(payload.GetProperty("reply_markup").GetProperty("inline_keyboard").EnumerateArray());
-            var button = Assert.Single(row.EnumerateArray());
-            Assert.Equal("Обновить 💫", button.GetProperty("text").GetString());
-            var data = button.GetProperty("callback_data").GetString();
-            if (method == "editMessageText") {
-                Assert.Equal(messageId, payload.GetProperty("message_id").GetInt32());
-                Assert.Equal(callbackData, data);
-            }
-            else {
-                callbackData = data;
+            if (command == "/space") {
+                var row = Assert.Single(payload.GetProperty("reply_markup").GetProperty("inline_keyboard").EnumerateArray());
+                var button = Assert.Single(row.EnumerateArray());
+                Assert.Equal("Обновить 💫", button.GetProperty("text").GetString());
+                var data = button.GetProperty("callback_data").GetString();
+                if (method == "editMessageText") {
+                    Assert.Equal(messageId, payload.GetProperty("message_id").GetInt32());
+                    Assert.Equal(callbackData, data);
+                }
+                else {
+                    callbackData = data;
+                }
             }
             sent.Add(payload.GetProperty("text").GetString()!);
             if (method == "editMessageText" && unchanged) {
@@ -160,7 +170,7 @@ public partial class SpaceCommandTests {
         var ctx = new BotContext {
             Bot = new TelegramBotClient("123456789:abcdefghijklmnopqrstuvwxyz123456789", http),
             Event = new MessageUserEvent(new UpdateInfo(UpdateType.Message, "student",
-                chat, chatId, new MessageId { Id = messageId }), "/space"),
+                chat, chatId, new MessageId { Id = messageId }), command),
             User = new UserData("student", "ИТ26-11", null, null, null, false)
         };
 
