@@ -6,7 +6,7 @@ public sealed record FreeRoom(string Name, TimeOnly? NextStart, IReadOnlyList<st
 
 public static class RoomAvailability {
     private static readonly string[] Rooms = [
-        "1-3", "2-1", "2-3", "2-4", "2-5", "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-e",
+        "1-3", "2-1", "2-2", "2-3", "2-4", "2-5", "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-e",
         "403", "404", "405", "406", "410"
     ];
     private static readonly Dictionary<string, int> RoomIndices = Rooms
