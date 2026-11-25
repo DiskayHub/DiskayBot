@@ -13,7 +13,7 @@ Telegram bot that shows the [IT College](https://students.it-college.ru) class s
 | `/start` | everyone | Welcome message |
 | `/create_account` | everyone | Register and pick a course and group |
 | `/disky` | user | Nearest schedule for your group, with day navigation |
-| `/space` | user | Rooms free according to today's schedule, longest remaining free time first |
+| `/space` | user | Rooms free according to today's schedule, longest remaining free time first, with the group(s) of the next class |
 | `/check` | user | Schedule of any group |
 | `/settings` | user | Change group, toggle news notifications |
 | `/show_profile` | user | Profile data |

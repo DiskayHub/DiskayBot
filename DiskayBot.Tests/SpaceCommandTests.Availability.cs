@@ -17,10 +17,21 @@ public partial class SpaceCommandTests {
             Lesson("410", new(11, 0), now)
         ])], now);
 
-        Assert.Equal(new[] { new FreeRoom("1-3", new(14, 0)), new FreeRoom("3-e", new(14, 0)) },
-            free.Where(room => room.NextStart != null));
-        Assert.All(new[] { "404", "405", "410" }, name => Assert.Contains(new FreeRoom(name, null), free));
+        Assert.Collection(free.Where(room => room.NextStart != null),
+            room => AssertNext(room, "1-3"),
+            room => AssertNext(room, "3-e"));
+        Assert.All(new[] { "404", "405", "410" }, name => {
+            var room = Assert.Single(free, room => room.Name == name);
+            Assert.Null(room.NextStart);
+            Assert.Empty(room.NextGroups);
+        });
         Assert.DoesNotContain(free, room => room.Name.Equals("Online", StringComparison.OrdinalIgnoreCase));
+
+        static void AssertNext(FreeRoom room, string name) {
+            Assert.Equal(name, room.Name);
+            Assert.Equal(new TimeOnly(14, 0), room.NextStart);
+            Assert.Equal("ИТ26-11", Assert.Single(room.NextGroups));
+        }
     }
 
     private static DayItem Lesson(string? room, TimeOnly start, TimeOnly end, params string[] subrooms) =>

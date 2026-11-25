@@ -17,6 +17,8 @@ using Telegram.Bot.Types.Enums;
 namespace DiskayBot.Tests;
 
 public partial class SpaceCommandTests {
+    private const string Header = "📅 <b>25.11.2026</b> | 🚪 <b>Свободные кабинеты по расписанию</b>\n" +
+        "<code>——————————————————————————</code>\n";
     private static readonly DateOnly Today = new(2026, 11, 25);
     private static readonly string[] RoomNames = [
         "1-3", "2-1", "2-3", "2-4", "2-5", "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-e",
@@ -24,17 +26,23 @@ public partial class SpaceCommandTests {
     ];
 
     [Fact]
-    public async Task Dispatch_orders_rooms_by_remaining_free_time_across_groups() {
+    public async Task Dispatch_orders_rooms_and_shows_only_groups_at_the_next_start() {
         var snapshot = new RoomScheduleSnapshot(Today, [
             new DaySchedule(Today, "ИТ26-11", [
                 Lesson("404", new(11, 30), new(12, 10)),
                 Lesson("410", new(10, 30), new(11, 30)),
                 Lesson("403", new(15, 0), new(16, 0))
             ]),
+            new DaySchedule(Today, "ИТ26-13", [
+                Lesson(null, new(14, 0), new(15, 0), "403", "403")
+            ]),
             new DaySchedule(Today, "ИТ26-12", [
                 Lesson(null, new(11, 0), new(12, 0), "3-1/2"),
                 Lesson("403", new(14, 0), new(15, 0)),
-                Lesson("405", new(12, 0), new(13, 0)),
+                Lesson("403", new(14, 0), new(15, 0), "403"),
+                Lesson("405", new(12, 0), new(13, 0))
+            ]),
+            new DaySchedule(Today, "ИТ<&>26", [
                 Lesson("406", new(11, 30, 45), new(12, 30))
             ])
         ]);
@@ -42,13 +50,12 @@ public partial class SpaceCommandTests {
         var text = await Dispatch(snapshot);
 
         string[] occupiedOrScheduled = ["404", "3-1", "3-2", "403", "405", "406"];
-        var expected = RoomNames.Except(occupiedOrScheduled)
-            .Select(name => $"{name} — до конца дня (12 ч 30 мин)");
-        Assert.Equal(string.Join('\n', expected.Prepend("Свободные кабинеты по расписанию:").Concat([
-            "403 — до 14:00 (2 ч 30 мин)",
-            "405 — до 12:00 (30 мин)",
-            "406 — до 11:30 (меньше 1 мин)"
-        ])), text);
+        var allDay = string.Join(" · ", RoomNames.Except(occupiedOrScheduled).Select(name => $"<b>{name}</b>"));
+        Assert.Equal(Header + "<b>До конца дня</b> (12 ч 30 мин)\n" + allDay + "\n\n" +
+            "<b>До следующей пары</b>\n" +
+            "--&gt; <b>403</b> · до <b>14:00</b> (2 ч 30 мин) · 🫡 <b>ИТ26-12, ИТ26-13</b>\n" +
+            "--&gt; <b>405</b> · до <b>12:00</b> (30 мин) · 🫡 <b>ИТ26-12</b>\n" +
+            "--&gt; <b>406</b> · до <b>11:30</b> (меньше 1 мин) · 🫡 <b>ИТ&lt;&amp;&gt;26</b>", text);
     }
 
     [Theory]
@@ -57,15 +64,16 @@ public partial class SpaceCommandTests {
     public async Task Dispatch_reports_unavailable_for_missing_or_yesterdays_snapshot(bool yesterday) {
         var snapshot = yesterday ? new RoomScheduleSnapshot(Today.AddDays(-1), []) : null;
 
-        Assert.Equal("Расписание всех групп на сегодня пока недоступно. Попробуйте позже.", await Dispatch(snapshot));
+        Assert.Equal(Header + "Расписание всех групп на сегодня пока недоступно. Попробуйте позже.",
+            await Dispatch(snapshot));
     }
 
     [Fact]
     public async Task Dispatch_lists_every_room_when_there_are_no_classes() {
         var text = await Dispatch(new RoomScheduleSnapshot(Today, []));
 
-        Assert.Equal(string.Join('\n', RoomNames.Select(name => $"{name} — до конца дня (12 ч 30 мин)")
-            .Prepend("Свободные кабинеты по расписанию:")), text);
+        Assert.Equal(Header + "<b>До конца дня</b> (12 ч 30 мин)\n" +
+            string.Join(" · ", RoomNames.Select(name => $"<b>{name}</b>")), text);
     }
 
     [Fact]
@@ -75,7 +83,7 @@ public partial class SpaceCommandTests {
         lessons.Add(Lesson("каб 1-3", new(11, 0), new(12, 0), "3-1/2"));
         var snapshot = new RoomScheduleSnapshot(Today, [new DaySchedule(Today, "ИТ26-11", lessons)]);
 
-        Assert.Equal("По расписанию сейчас нет свободных кабинетов.", await Dispatch(snapshot));
+        Assert.Equal(Header + "По расписанию сейчас нет свободных кабинетов.", await Dispatch(snapshot));
     }
 
     private static async Task<string> Dispatch(RoomScheduleSnapshot? snapshot) {
@@ -87,7 +95,7 @@ public partial class SpaceCommandTests {
             using var json = JsonDocument.Parse(body);
             var payload = json.RootElement;
             Assert.Equal(chatId, payload.GetProperty("chat_id").GetInt64());
-            Assert.False(payload.TryGetProperty("parse_mode", out _));
+            Assert.Equal("HTML", payload.GetProperty("parse_mode").GetString(), ignoreCase: true);
             Assert.False(payload.TryGetProperty("reply_markup", out _));
             sent.Add(payload.GetProperty("text").GetString()!);
             return new HttpResponseMessage(HttpStatusCode.OK) {
