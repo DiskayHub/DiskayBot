@@ -201,9 +201,9 @@ public class MessageBuilder {
         return sb.ToString();
     }
 
-    public static string ShowFreeRooms(DateOnly date, TimeOnly now, IReadOnlyList<FreeRoom>? rooms) {
+    public static string ShowFreeRooms(DateOnly date, IReadOnlyList<FreeRoom>? rooms) {
         var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"📅 <b>{date:dd.MM.yyyy}</b> | 🚪 <b>Свободные кабинеты по расписанию</b>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"📅 <b>{date:dd.MM.yyyy}</b> | 🚪 <b>Свободные кабинеты</b>");
         sb.AppendLine("<code>——————————————————————————</code>");
         if (rooms == null) {
             return sb.Append("Расписание всех групп на сегодня пока недоступно. Попробуйте позже.").ToString();
@@ -213,52 +213,36 @@ public class MessageBuilder {
         }
 
         var index = 0;
-        if (rooms[0].NextStart == null) {
-            sb.Append("<b>До конца дня</b> (");
-            AppendDuration(TimeSpan.TicksPerDay);
-            sb.AppendLine(")");
-            for (; index < rooms.Count && rooms[index].NextStart == null; index++) {
-                if (index > 0) {
-                    sb.Append(" · ");
-                }
-                sb.Append("<b>").Append(rooms[index].Name).Append("</b>");
+        for (; index < rooms.Count && rooms[index].NextStart == null; index++) {
+            if (index > 0) {
+                sb.Append(" · ");
             }
+            sb.Append("<b>").Append(rooms[index].Name).Append("</b>");
         }
         if (index < rooms.Count) {
             if (index > 0) {
                 sb.AppendLine().AppendLine();
             }
-            sb.Append("<b>До следующей пары</b>");
+            sb.AppendLine("<b>До следующей пары</b>");
+            var firstScheduled = index;
             for (; index < rooms.Count; index++) {
                 var room = rooms[index];
                 var start = room.NextStart!.Value;
-                sb.AppendLine().Append("--&gt; <b>").Append(room.Name).Append("</b> · до ")
-                    .Append(CultureInfo.InvariantCulture, $"<b>{start:HH:mm}</b> (");
-                AppendDuration(start.Ticks);
-                sb.Append(") · 🫡 <b>");
+                if (index > firstScheduled) {
+                    sb.AppendLine().AppendLine();
+                }
+                sb.Append("🫡 <b>");
                 for (var groupIndex = 0; groupIndex < room.NextGroups.Count; groupIndex++) {
                     if (groupIndex > 0) {
                         sb.Append(", ");
                     }
                     sb.Append(WebUtility.HtmlEncode(room.NextGroups[groupIndex]));
                 }
-                sb.Append("</b>");
+                sb.AppendLine("</b>");
+                sb.Append(CultureInfo.InvariantCulture, $"<b>{room.Name}</b> · до <b>{start:HH:mm}</b>");
             }
         }
         return sb.ToString();
-
-        void AppendDuration(long endTicks) {
-            var minutes = (endTicks - now.Ticks) / TimeSpan.TicksPerMinute;
-            if (minutes == 0) {
-                sb.Append("меньше 1 мин");
-            }
-            else if (minutes < 60) {
-                sb.Append(minutes).Append(" мин");
-            }
-            else {
-                sb.Append(minutes / 60).Append(" ч ").Append(minutes % 60).Append(" мин");
-            }
-        }
     }
 
     public static string NewsPreview(string text) {

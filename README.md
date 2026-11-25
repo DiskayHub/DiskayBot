@@ -28,7 +28,7 @@ The admin is the Telegram user whose id is set in `Admin__AdminId`.
 
 A background worker fetches the current week for every group known to DiskayMemory every `ScheduleService:updateTimeout` seconds (120 by default) and stores each day in Redis for `Redis:scheduleExpireDays` days. Commands read schedules from Redis.
 
-`/space` uses a separate in-memory snapshot of today's schedule for all groups, including subgroup bookings. It reports availability only after all groups have been refreshed successfully. It does not check whether rooms are physically open.
+`/space` uses a separate in-memory snapshot of today's schedule for all groups, including subgroup bookings. It reports availability only after all groups have been refreshed successfully. The refresh button updates the same message from the latest snapshot. It does not check whether rooms are physically open.
 
 | Project | Responsibility |
 |---|---|
