@@ -13,6 +13,7 @@ Telegram bot that shows the [IT College](https://students.it-college.ru) class s
 | `/start` | everyone | Welcome message |
 | `/create_account` | everyone | Register and pick a course and group |
 | `/disky` | user | Nearest schedule for your group, with day navigation |
+| `/space` | user | Rooms free according to today's schedule, longest remaining free time first |
 | `/check` | user | Schedule of any group |
 | `/settings` | user | Change group, toggle news notifications |
 | `/show_profile` | user | Profile data |
@@ -26,6 +27,8 @@ The admin is the Telegram user whose id is set in `Admin__AdminId`.
 ## How it works
 
 A background worker fetches the current week for every group known to DiskayMemory every `ScheduleService:updateTimeout` seconds (120 by default) and stores each day in Redis for `Redis:scheduleExpireDays` days. Commands read schedules from Redis.
+
+`/space` uses a separate in-memory snapshot of today's schedule for all groups, including subgroup bookings. It reports availability only after all groups have been refreshed successfully. It does not check whether rooms are physically open.
 
 | Project | Responsibility |
 |---|---|

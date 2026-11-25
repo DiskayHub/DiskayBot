@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using DiskayBot.API.Clients;
 using DiskayBot.API.Contracts;
+using DiskayBot.API.Contracts.Schedule;
 using DiskayBot.API.Interfaces;
 using DiskayBot.API.Modules;
 using DiskayBot.Bot.ScheduleService.Events;
@@ -18,25 +19,28 @@ public class ScheduleBackgroundService : BackgroundService {
     private readonly IRedisController _redis;
     private readonly IMediator _mediator;
     private readonly UserClient _userClient;
+    private readonly RoomScheduleState _roomSchedule;
     private readonly ScheduleServiceOptions _options;
     private readonly ILogger<ScheduleBackgroundService> _logger;
 
     private IReadOnlyList<string> _groups = Array.Empty<string>();
 
-    public ScheduleBackgroundService(IMediator mediator, IScheduleClient scheduleClient, IRedisController redis, UserClient userClient, IOptions<ScheduleServiceOptions> options, ILogger<ScheduleBackgroundService> logger) {
+    public ScheduleBackgroundService(IMediator mediator, IScheduleClient scheduleClient, IRedisController redis, UserClient userClient, RoomScheduleState roomSchedule, IOptions<ScheduleServiceOptions> options, ILogger<ScheduleBackgroundService> logger) {
         _mediator =  mediator;
         _scheduleClient = scheduleClient;
         _redis = redis;
         _userClient = userClient;
+        _roomSchedule = roomSchedule;
         _options = options.Value;
         _logger = logger;
     }
 
-    private async Task RefreshGroups() {
+    private async Task<bool> RefreshGroups() {
         try {
             var groups = await _userClient.GetAllGroups();
             if (groups is { Count: > 0 }) {
                 _groups = groups.Select(group => group.name).ToList();
+                return true;
             }
             else {
                 _logger.LogWarning("DiskayMemory вернул пустой список групп, оставляю предыдущий ({Count})", _groups.Count);
@@ -45,6 +49,7 @@ public class ScheduleBackgroundService : BackgroundService {
         catch (Exception ex) {
             _logger.LogError(ex, "Не удалось обновить список групп, оставляю предыдущий ({Count})", _groups.Count);
         }
+        return false;
     }
 
     private async Task UpdateSchedule() {
@@ -52,24 +57,46 @@ public class ScheduleBackgroundService : BackgroundService {
         var changedDays = 0;
         var failedRequests = 0;
 
-        await RefreshGroups();
+        var complete = await RefreshGroups();
+        if (!complete) {
+            _roomSchedule.Publish(null);
+        }
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var currentWeek = TimeHelper.GetWeekPeriod(today);
+        var todaySchedules = new List<DaySchedule>(_groups.Count);
 
         // Следующая неделя нужна, чтобы в субботу показывать понедельник
         TimePeriod[] weeks = [
-            TimeHelper.GetWeekPeriod(DateOnly.FromDateTime(DateTime.Now)),
-            TimeHelper.GetNextWeekPeriod()
+            currentWeek,
+            TimeHelper.GetWeekPeriod(currentWeek.End.AddDays(1))
         ];
 
-        foreach (var group in _groups) {
-            foreach (var week in weeks) {
+        foreach (var week in weeks) {
+            var isCurrentWeek = week.Start == currentWeek.Start;
+            foreach (var group in _groups) {
                 try {
-                    changedDays += await UpdateWeek(group, week);
+                    var freshWeekSchedule = await _scheduleClient.GetWeekSchedule(group, week);
+                    changedDays += await UpdateWeek(group, week, freshWeekSchedule);
+                    if (isCurrentWeek && complete && freshWeekSchedule != null) {
+                        foreach (var day in freshWeekSchedule.Schedule) {
+                            if (day.date == today) {
+                                todaySchedules.Add(day);
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex) {
+                    if (isCurrentWeek) {
+                        complete = false;
+                        _roomSchedule.Publish(null);
+                    }
                     failedRequests++;
                     _logger.LogError(ex, "Ошибка обновления расписания для группы '{Group}' на неделю с {WeekStart:dd.MM.yyyy}",
                         group, week.Start);
                 }
+            }
+            if (isCurrentWeek && complete) {
+                _roomSchedule.Publish(new RoomScheduleSnapshot(today, todaySchedules.ToArray()));
             }
         }
 
@@ -80,9 +107,8 @@ public class ScheduleBackgroundService : BackgroundService {
             Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds, _groups.Count, changedDays, failedRequests);
     }
 
-    private async Task<int> UpdateWeek(string group, TimePeriod week) {
+    private async Task<int> UpdateWeek(string group, TimePeriod week, GroupWeekSchedule? freshWeekSchedule) {
         var changedDays = 0;
-        var freshWeekSchedule = await _scheduleClient.GetWeekSchedule(group, week);
         if (freshWeekSchedule != null) {
             foreach (var freshDaySchedule in freshWeekSchedule.Schedule) {
                 var pastScheduleIsActual = await _redis.CheckScheduleEquals(freshDaySchedule);

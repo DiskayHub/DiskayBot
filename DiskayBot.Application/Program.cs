@@ -77,6 +77,8 @@ var host = Host.CreateDefaultBuilder(args)
                 $"session=STDNT-login-user={scheduleOptions.login}&STDNT-login-pw={scheduleOptions.password}");
         });
         services.AddSingleton<IScheduleController, ScheduleController>();
+        services.AddSingleton<RoomScheduleState>();
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
 
         // Сканирование и регистрация команд/каллбеков
         var descriptors = CommandScanner.Scan(Assembly.GetExecutingAssembly()).ToList();
