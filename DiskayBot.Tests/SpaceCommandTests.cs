@@ -18,7 +18,7 @@ namespace DiskayBot.Tests;
 
 public partial class SpaceCommandTests {
     private const string Header = "📅 <b>25.11.2026</b> | <b>Свободные кабинеты</b>\n" +
-        "<code>——————————————————————————</code>\n";
+        "<code>————————————————————————————————</code>\n";
     private const string AllDay = "✨ <b>Весь день:</b> ";
     private static readonly DateOnly Today = new(2026, 11, 25);
     private static readonly string[] RoomNames = [

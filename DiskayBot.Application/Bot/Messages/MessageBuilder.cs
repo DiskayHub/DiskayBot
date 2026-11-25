@@ -205,7 +205,7 @@ public class MessageBuilder {
     public static string ShowFreeRooms(DateOnly date, IReadOnlyList<FreeRoom>? rooms) {
         var sb = new StringBuilder();
         sb.AppendLine(CultureInfo.InvariantCulture, $"📅 <b>{date:dd.MM.yyyy}</b> | <b>Свободные кабинеты</b>");
-        sb.AppendLine("<code>——————————————————————————</code>");
+        sb.Append("<code>").Append('—', 32).AppendLine("</code>");
         if (rooms == null) {
             return sb.Append("Расписание всех групп на сегодня пока недоступно. Попробуйте позже.").ToString();
         }
