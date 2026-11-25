@@ -19,7 +19,7 @@ namespace DiskayBot.Tests;
 public partial class SpaceCommandTests {
     private const string Header = "📅 <b>25.11.2026</b> | <b>Свободные кабинеты</b>\n" +
         "<code>————————————————————————————————</code>\n";
-    private const string AllDay = "✨ <b>Весь день:</b> ";
+    private const string AllDay = "<b>Весь день:</b> ";
     private static readonly DateOnly Today = new(2026, 11, 25);
     private static readonly string[] RoomNames = [
         "1-3", "2-1", "2-3", "2-4", "2-5", "3-0", "3-1", "3-2", "3-3", "3-4", "3-5", "3-e",
@@ -53,7 +53,7 @@ public partial class SpaceCommandTests {
 
         string[] occupiedOrScheduled = ["404", "3-1", "3-2", "3-4", "403", "405", "406"];
         var allDay = string.Join(" · ", RoomNames.Except(occupiedOrScheduled));
-        Assert.Equal(Header + AllDay + allDay + "\n\n" +
+        Assert.Equal(Header + AllDay + allDay + " ✨\n\n" +
             "--&gt; до <b>14:00</b>\n  · <b>3-4</b> : ИТ26-11\n  · <b>403</b> : ИТ26-12, ИТ26-13\n\n" +
             "--&gt; до <b>12:00</b>\n  · <b>405</b> : ИТ26-12\n\n" +
             "--&gt; до <b>11:30</b>\n  · <b>406</b> : ИТ&lt;&amp;&gt;26", text);
@@ -73,7 +73,7 @@ public partial class SpaceCommandTests {
     public async Task Dispatch_lists_every_room_when_there_are_no_classes() {
         var text = await Dispatch(new RoomScheduleSnapshot(Today, []));
 
-        Assert.Equal(Header + AllDay + string.Join(" · ", RoomNames), text);
+        Assert.Equal(Header + AllDay + string.Join(" · ", RoomNames) + " ✨", text);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public partial class SpaceCommandTests {
         var latest = new RoomScheduleSnapshot(Today, []);
         var updatedText = await Dispatch(unchanged ? latest : null, latest, unchanged);
 
-        Assert.Equal(Header + AllDay + string.Join(" · ", RoomNames), updatedText);
+        Assert.Equal(Header + AllDay + string.Join(" · ", RoomNames) + " ✨", updatedText);
     }
 
     [Fact]

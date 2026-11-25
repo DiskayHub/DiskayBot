@@ -215,13 +215,16 @@ public class MessageBuilder {
 
         var index = 0;
         if (rooms[0].NextStart == null) {
-            sb.Append("✨ <b>Весь день:</b> ");
+            sb.Append("<b>Весь день:</b> ");
         }
         for (; index < rooms.Count && rooms[index].NextStart == null; index++) {
             if (index > 0) {
                 sb.Append(" · ");
             }
             sb.Append(rooms[index].Name);
+        }
+        if (index > 0) {
+            sb.Append(" ✨");
         }
         long? previousMinute = null;
         for (; index < rooms.Count; index++) {
